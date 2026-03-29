@@ -1,35 +1,75 @@
+using System;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
+using Microsoft.Web.WebView2.Core;
+using Microsoft.Web.WebView2.WinForms;
 
 namespace gh
 {
-    /// <summary>
-    /// WinForms UserControl overlaid on the GH canvas as the component's viewer area.
-    /// WebView2 will be added here in the next phase.
-    /// </summary>
     public class WatchPanel : UserControl
     {
+        private WebView2 _webView;
+
         public WatchPanel()
         {
-            BackColor      = Color.White;
+            BackColor = Color.White;
             DoubleBuffered = true;
+
+            _webView = new WebView2 { Dock = DockStyle.Fill };
+            Controls.Add(_webView);
+
+            InitAsync();
         }
 
-        protected override void OnPaint(PaintEventArgs e)
+        private async void InitAsync()
         {
-            base.OnPaint(e);
+            try
+            {
+                var userDatFolder = "gh-watch-webview";
+                string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+                string path = Path.Combine(userDirectory, userDatFolder);
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path); // ensure it exists
+                }
 
-            // Placeholder text — replaced by WebView2 later
-            const string text = "Three.js viewer";
-            using (var font  = new Font("Segoe UI", 9f, FontStyle.Regular))
+                var env = await CoreWebView2Environment.CreateAsync(
+                    userDataFolder: path,
+                    options: new CoreWebView2EnvironmentOptions()
+                );
+                await _webView.EnsureCoreWebView2Async(env);
+                _webView.CoreWebView2.Navigate("http://localhost:5173");
+            }
+            catch (Exception ex)
+            {
+                ShowError(ex.Message);
+            }
+        }
+
+        private void ShowError(string message)
+        {
+            _webView.Visible = false;
+            Invalidate();
+            using (var g = CreateGraphics())
+            using (var font = new Font("Segoe UI", 9f))
             using (var brush = new SolidBrush(Color.FromArgb(180, 180, 180)))
             {
-                SizeF sz = e.Graphics.MeasureString(text, font);
-                e.Graphics.DrawString(
-                    text, font, brush,
-                    (Width  - sz.Width)  / 2f,
+                SizeF sz = g.MeasureString(message, font);
+                g.DrawString(message, font, brush,
+                    (Width - sz.Width) / 2f,
                     (Height - sz.Height) / 2f);
             }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _webView?.Dispose();
+                _webView = null;
+            }
+            base.Dispose(disposing);
         }
     }
 }

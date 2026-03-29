@@ -1,5 +1,6 @@
 using System;
 using Grasshopper.Kernel;
+using Grasshopper.Kernel.Attributes;
 using Grasshopper.Kernel.Types;
 
 namespace gh
@@ -34,6 +35,9 @@ namespace gh
             IGH_Goo data = null;
             DA.GetData(0, ref data);
             ReceivedData = data;
+
+            //TODO — pass this data to the WebView in WatchAttributes, so it can be displayed.
+            ((WatchAttributes)m_attributes).UpdateWebView(data);
         }
 
         public override void RemovedFromDocument(GH_Document document)
