@@ -17,7 +17,6 @@ The repo has two sub-projects:
 npm run dev          # Vite dev server on http://localhost:5173
 npm run build        # tsc -b && vite build
 npm run lint         # ESLint check
-npm run copy-wasm    # Copy rhino3dm.wasm to public/ (run once after install)
 ```
 
 ### Backend (`gh/`)
