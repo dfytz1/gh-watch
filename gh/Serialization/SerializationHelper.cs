@@ -2,6 +2,7 @@ using gh.Constants;
 using gh.Dtos;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
+using Rhino;
 using Rhino.Geometry;
 using System.Collections.Generic;
 
@@ -21,13 +22,8 @@ namespace gh.Serialization
 
             var payload = new List<object>();
             foreach (var goo in _goos)
-            {
-                var data = SerializeGeometry(goo);
-                if (data != null)
-                {
-                    payload.Add(data);
-                }
-            }
+                foreach (var item in SerializeGeometry(goo))
+                    payload.Add(item);
 
             if (payload.Count == 0) return null;
 
@@ -37,47 +33,75 @@ namespace gh.Serialization
         }
 
 
-        public static object SerializeGeometry(this IGH_Goo goo)
+        public static IEnumerable<object> SerializeGeometry(this IGH_Goo goo)
         {
             switch (goo)
             {
-                // Brep: solid, polysurface, single face — mesh and send
+                // Brep: solid, polysurface, single face — mesh + real edges
                 case GH_Brep ghBrep when ghBrep.Value != null:
-                    return MeshPayload(MeshFromBrep(ghBrep.Value));
+                {
+                    var mesh = MeshPayload(MeshFromBrep(ghBrep.Value));
+                    if (mesh != null) yield return mesh;
+                    var edges = BrepEdgesPayload(ghBrep.Value);
+                    if (edges != null) yield return edges;
+                    yield break;
+                }
 
                 // Surface: GH 8 stores this as a single-face Brep already
                 case GH_Surface ghSurface when ghSurface.Value != null:
-                    return MeshPayload(MeshFromBrep(ghSurface.Value));
+                {
+                    var mesh = MeshPayload(MeshFromBrep(ghSurface.Value));
+                    if (mesh != null) yield return mesh;
+                    var edges = BrepEdgesPayload(ghSurface.Value);
+                    if (edges != null) yield return edges;
+                    yield break;
+                }
 
-                // Box: convert to Brep first, then mesh
+                // Box: convert to Brep first, then mesh + edges
                 case GH_Box ghBox:
-                    return MeshPayload(MeshFromBrep(ghBox.Value.ToBrep()));
+                {
+                    var brep = ghBox.Value.ToBrep();
+                    var mesh = MeshPayload(MeshFromBrep(brep));
+                    if (mesh != null) yield return mesh;
+                    var edges = BrepEdgesPayload(brep);
+                    if (edges != null) yield return edges;
+                    yield break;
+                }
 
-                // Mesh: already tessellated, just triangulate quads and send
+                // Mesh: send topology edges first (before ConvertQuadsToTriangles mutates the mesh),
+                // then send the triangulated mesh payload
                 case GH_Mesh ghMesh when ghMesh.Value != null:
-                    return MeshPayload(ghMesh.Value);
+                {
+                    var meshEdges = MeshEdgesPayload(ghMesh.Value);
+                    if (meshEdges != null) yield return meshEdges;
+                    yield return MeshPayload(ghMesh.Value);
+                    yield break;
+                }
 
                 // Curve: sample into a polyline and send as flat point array.
                 // Covers LineCurve, ArcCurve, NurbsCurve, PolylineCurve, etc.
                 case GH_Curve ghCurve when ghCurve.Value != null:
-                    return CurvePayload(ghCurve.Value);
+                    yield return CurvePayload(ghCurve.Value);
+                    yield break;
 
                 // Line: struct — never null, just send the two endpoints
                 case GH_Line ghLine:
-                    return LinePayload(ghLine.Value);
+                    yield return LinePayload(ghLine.Value);
+                    yield break;
 
                 // Point: struct — just send XYZ
                 case GH_Point ghPoint:
                     var p = ghPoint.Value;
-                    return new PointPayloadDto
+                    yield return new PointPayloadDto
                     {
                         X = (float)p.X,
                         Y = (float)p.Y,
                         Z = (float)p.Z
                     };
+                    yield break;
 
                 default:
-                    return null;
+                    yield break;
             }
         }
 
@@ -173,6 +197,66 @@ namespace gh.Serialization
                 Start = new float[] { (float)line.From.X, (float)line.From.Y, (float)line.From.Z },
                 End = new float[] { (float)line.To.X, (float)line.To.Y, (float)line.To.Z }
             };
+        }
+
+        // Extracts all unique topology edges from a Mesh as a flat segment-pair buffer.
+        // Called before MeshPayload so quads are captured before ConvertQuadsToTriangles runs.
+        static MeshEdgesPayloadDto MeshEdgesPayload(Mesh mesh)
+        {
+            if (mesh == null || mesh.TopologyEdges.Count == 0) return null;
+
+            int edgeCount = mesh.TopologyEdges.Count;
+            var buffer = new float[edgeCount * 6];
+
+            for (int i = 0; i < edgeCount; i++)
+            {
+                Line edge = mesh.TopologyEdges.EdgeLine(i);
+                int idx = i * 6;
+                buffer[idx]     = (float)edge.From.X; buffer[idx + 1] = (float)edge.From.Y; buffer[idx + 2] = (float)edge.From.Z;
+                buffer[idx + 3] = (float)edge.To.X;   buffer[idx + 4] = (float)edge.To.Y;   buffer[idx + 5] = (float)edge.To.Z;
+            }
+
+            return new MeshEdgesPayloadDto { Buffer = buffer };
+        }
+
+        // Extracts topological edges from a Brep as a flat segment-pair buffer.
+        // Straight edges contribute 1 segment (6 floats); curved edges are sampled
+        // into 32 segments (192 floats each). Returns null if the Brep has no edges.
+        static BrepEdgesPayloadDto BrepEdgesPayload(Brep brep)
+        {
+            if (brep == null || brep.Edges.Count == 0) return null;
+
+            var segments = new List<float>();
+
+            foreach (BrepEdge edge in brep.Edges)
+            {
+                if (edge.IsLinear(RhinoMath.ZeroTolerance))
+                {
+                    // Straight edge — just two endpoints
+                    Point3d from = edge.PointAtStart;
+                    Point3d to = edge.PointAtEnd;
+                    segments.Add((float)from.X); segments.Add((float)from.Y); segments.Add((float)from.Z);
+                    segments.Add((float)to.X);   segments.Add((float)to.Y);   segments.Add((float)to.Z);
+                }
+                else
+                {
+                    // Curved edge — sample into 32 segments
+                    double[] ts = edge.DivideByCount(32, includeEnds: true);
+                    if (ts == null || ts.Length < 2) continue;
+
+                    for (int i = 0; i < ts.Length - 1; i++)
+                    {
+                        Point3d a = edge.PointAt(ts[i]);
+                        Point3d b = edge.PointAt(ts[i + 1]);
+                        segments.Add((float)a.X); segments.Add((float)a.Y); segments.Add((float)a.Z);
+                        segments.Add((float)b.X); segments.Add((float)b.Y); segments.Add((float)b.Z);
+                    }
+                }
+            }
+
+            if (segments.Count == 0) return null;
+
+            return new BrepEdgesPayloadDto { Buffer = segments.ToArray() };
         }
     }
 }
