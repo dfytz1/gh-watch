@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { registerWebViewMessageHandlers } from "../webview-communication/wv";
 import type { IMeshPayload } from "../props/payload-props/mesh-props";
 import type { IPointPayload } from "../props/payload-props/point-props";
@@ -9,24 +9,16 @@ import MeshView from "./mesh-view";
 import PointView from "./point-view";
 import CurveView from "./curve-view";
 import LineView from "./line-view";
-
-interface GeometryState {
-  meshes: IMeshPayload[];
-  points: IPointPayload[];
-  curves: ICurvePayload[];
-  lines: ILinePayload[];
-}
-
-const empty: GeometryState = { meshes: [], points: [], curves: [], lines: [] };
+import { useGeometryStore } from "../store/geometry-store";
 
 const GeometryView = () => {
-  const [geometry, setGeometry] = useState<GeometryState>(empty);
+  const { meshes, points, curves, lines, setGeometry } = useGeometryStore();
 
   useEffect(() => {
     const unregister = registerWebViewMessageHandlers({
       geometry: (payload: unknown) => {
         const items = payload as IType[];
-        const next: GeometryState = { meshes: [], points: [], curves: [], lines: [] };
+        const next = { meshes: [] as IMeshPayload[], points: [] as IPointPayload[], curves: [] as ICurvePayload[], lines: [] as ILinePayload[] };
 
         for (const item of items) {
           switch (item.type) {
@@ -42,14 +34,14 @@ const GeometryView = () => {
     });
 
     return () => unregister();
-  }, []);
+  }, [setGeometry]);
 
   return (
     <>
-      <MeshView  meshes={geometry.meshes}  />
-      <PointView points={geometry.points} />
-      <CurveView curves={geometry.curves} />
-      <LineView  lines={geometry.lines}   />
+      <MeshView  meshes={meshes}  />
+      <PointView points={points} />
+      <CurveView curves={curves} />
+      <LineView  lines={lines}   />
     </>
   );
 };
