@@ -17,17 +17,13 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
           cache-dependency-path: gh-watch-frontend/package-lock.json
 
       - name: Install dependencies
         working-directory: gh-watch-frontend
         run: npm ci
-
-      - name: Copy WASM
-        working-directory: gh-watch-frontend
-        run: npm run copy-wasm
 
       - name: Build
         working-directory: gh-watch-frontend
