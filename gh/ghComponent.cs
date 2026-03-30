@@ -1,64 +1,56 @@
 using System;
-using System.Collections.Generic;
-
 using Grasshopper;
 using Grasshopper.Kernel;
-using Rhino.Geometry;
+using Grasshopper.Kernel.Attributes;
+using Grasshopper.Kernel.Data;
+using Grasshopper.Kernel.Types;
 
 namespace gh
 {
-  public class ghComponent : GH_Component
-  {
-    /// <summary>
-    /// Each implementation of GH_Component must provide a public 
-    /// constructor without any arguments.
-    /// Category represents the Tab in which the component will appear, 
-    /// Subcategory the panel. If you use non-existing tab or panel names, 
-    /// new tabs/panels will automatically be created.
-    /// </summary>
-    public ghComponent()
-      : base("Watch", "watch",
-        "Displays the geometry in the component itself. Useful for debugging.",
-        "Display", "Preview")
+    public class ghComponent : GH_Component
     {
+        public ghComponent()
+          : base("Watch", "watch",
+              "Displays the geometry in the component itself. Useful for debugging.",
+              "Display", "Preview")
+        {
+        }
+
+        public override void CreateAttributes()
+        {
+            Attributes = new WatchAttributes(this);
+        }
+
+        protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
+        {
+            pManager.AddGenericParameter("Geometry", "G", "Geometry to display", GH_ParamAccess.tree);
+            pManager[0].Optional = true;
+        }
+
+        protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
+        {
+            // No outputs — geometry is shown in the component viewer
+        }
+
+        protected override void SolveInstance(IGH_DataAccess DA)
+        {
+            GH_Structure<IGH_Goo> data = null;
+            DA.GetDataTree(0, out data);
+
+            var allData = data.AllData(true);
+            ((WatchAttributes)m_attributes).UpdateWebView(allData);
+        }
+
+        public override void RemovedFromDocument(GH_Document document)
+        {
+            ((WatchAttributes)m_attributes).DestroyPanel();
+            base.RemovedFromDocument(document);
+        }
+
+
+
+        protected override System.Drawing.Bitmap Icon => null;
+
+        public override Guid ComponentGuid => new Guid("f498d738-bafa-49c0-b056-52ab788fb095");
     }
-
-    /// <summary>
-    /// Registers all the input parameters for this component.
-    /// </summary>
-    protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
-    {
-    }
-
-    /// <summary>
-    /// Registers all the output parameters for this component.
-    /// </summary>
-    protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
-    {
-    }
-
-    /// <summary>
-    /// This is the method that actually does the work.
-    /// </summary>
-    /// <param name="DA">The DA object can be used to retrieve data from input parameters and 
-    /// to store data in output parameters.</param>
-    protected override void SolveInstance(IGH_DataAccess DA)
-    {
-    }
-
-    /// <summary>
-    /// Provides an Icon for every component that will be visible in the User Interface.
-    /// Icons need to be 24x24 pixels.
-    /// You can add image files to your project resources and access them like this:
-    /// return Resources.IconForThisComponent;
-    /// </summary>
-    protected override System.Drawing.Bitmap Icon => null;
-
-    /// <summary>
-    /// Each component must have a unique Guid to identify it. 
-    /// It is vital this Guid doesn't change otherwise old ghx files 
-    /// that use the old ID will partially fail during loading.
-    /// </summary>
-    public override Guid ComponentGuid => new Guid("f498d738-bafa-49c0-b056-52ab788fb095");
-  }
 }

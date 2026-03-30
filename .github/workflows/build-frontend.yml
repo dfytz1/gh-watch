@@ -1,0 +1,30 @@
+name: Build Frontend
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: gh-watch-frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: gh-watch-frontend
+        run: npm ci
+
+      - name: Build
+        working-directory: gh-watch-frontend
+        run: npm run build
