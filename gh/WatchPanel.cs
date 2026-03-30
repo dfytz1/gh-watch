@@ -2,8 +2,10 @@ using System;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
+using gh.Dtos;
 using Microsoft.Web.WebView2.Core;
 using Microsoft.Web.WebView2.WinForms;
+using Newtonsoft.Json;
 
 namespace gh
 {
@@ -70,6 +72,15 @@ namespace gh
                 _webView = null;
             }
             base.Dispose(disposing);
+        }
+
+        public void PostMessage(SendDataDto data)
+        {
+            if (_webView?.CoreWebView2 != null)
+            {
+                string json = JsonConvert.SerializeObject(data);
+                _webView.CoreWebView2.PostWebMessageAsJson(json);
+            }
         }
     }
 }

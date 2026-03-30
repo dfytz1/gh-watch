@@ -55,6 +55,7 @@ nunit-*.xml
 
 #vscode
 .vscode/
+.vs/
 
 #claude
 claude/

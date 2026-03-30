@@ -1,6 +1,8 @@
 using System;
+using Grasshopper;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Attributes;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 
 namespace gh
@@ -16,12 +18,12 @@ namespace gh
 
         public override void CreateAttributes()
         {
-            m_attributes = new WatchAttributes(this);
+            Attributes = new WatchAttributes(this);
         }
 
         protected override void RegisterInputParams(GH_Component.GH_InputParamManager pManager)
         {
-            pManager.AddGenericParameter("Geometry", "G", "Geometry to display", GH_ParamAccess.item);
+            pManager.AddGenericParameter("Geometry", "G", "Geometry to display", GH_ParamAccess.tree);
             pManager[0].Optional = true;
         }
 
@@ -32,12 +34,11 @@ namespace gh
 
         protected override void SolveInstance(IGH_DataAccess DA)
         {
-            IGH_Goo data = null;
-            DA.GetData(0, ref data);
-            ReceivedData = data;
+            GH_Structure<IGH_Goo> data = null;
+            DA.GetDataTree(0, out data);
 
-            //TODO — pass this data to the WebView in WatchAttributes, so it can be displayed.
-            ((WatchAttributes)m_attributes).UpdateWebView(data);
+            var allData = data.AllData(true);
+            ((WatchAttributes)m_attributes).UpdateWebView(allData);
         }
 
         public override void RemovedFromDocument(GH_Document document)
@@ -46,8 +47,7 @@ namespace gh
             base.RemovedFromDocument(document);
         }
 
-        /// <summary>Data received from the input — will be passed to the WebView later.</summary>
-        public IGH_Goo ReceivedData { get; private set; }
+
 
         protected override System.Drawing.Bitmap Icon => null;
 

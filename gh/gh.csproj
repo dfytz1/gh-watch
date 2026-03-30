@@ -7,7 +7,7 @@
         Rhino 8 Windows: net48, net8.0, net8.0-windows, net8.0-windows10.0.22000.0, etc
         Rhino 8 Mac: net8.0, net8.0-macos, net8.0-macos12.0, etc
     -->
-    <TargetFrameworks>net8.0-windows;net48</TargetFrameworks>
+    <TargetFrameworks>net8.0-windows;net7.0-windows;net48</TargetFrameworks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <TargetExt>.gha</TargetExt>
     <NoWarn>NU1701;NETSDK1086</NoWarn>
@@ -29,22 +29,12 @@
   <!-- WebView2 — Windows only -->
   <ItemGroup Condition="$(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4'))">
 		<PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2088.41" />
+        		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
   
   <!-- For Windows only builds -->
   <PropertyGroup Condition="$(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4'))">
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
-
-  <!-- Reference WinForms for .NET 7.0 on macOS -->
-  <ItemGroup Condition="!($(TargetFramework.Contains('-windows')) or $(TargetFramework.StartsWith('net4')))">
-    <!-- Rhino 8.11 and later you can use this -->
-    <!-- <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" /> -->
-    
-    <!-- Rhino 8.10 and earlier -->
-    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
-    <Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False" />
-    <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime" />
-  </ItemGroup>
 
 </Project>

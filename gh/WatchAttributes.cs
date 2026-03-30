@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using gh.Serialization;
 using Grasshopper;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Attributes;
+using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 
 namespace gh
@@ -68,7 +70,10 @@ namespace gh
                 var p = Owner.Params.Input[0];
                 float y = Bounds.Y + HeaderHeight * 0.5f;
                 p.Attributes.Pivot = new PointF(Bounds.Left, y);
-                p.Attributes.Bounds = new RectangleF(Bounds.Left - 20f, y - 5f, 20f, 10f);
+                // Span the full header height (not just ±5 px around the nub) so
+                // IsTooltipRegion fires reliably and wire-drop hit-testing has a
+                // comfortable target no matter the canvas zoom level.
+                p.Attributes.Bounds = new RectangleF(Bounds.Left - 20f, Bounds.Y, 20f, HeaderHeight);
             }
         }
 
@@ -89,9 +94,21 @@ namespace gh
 
         // ── Rendering ─────────────────────────────────────────────────────────
         // GH calls Render() for each channel (background, objects, overlay, …).
-        // We only draw during the Objects channel, which is the main content pass.
         protected override void Render(GH_Canvas canvas, Graphics graphics, GH_CanvasChannel channel)
         {
+            // Wires channel: the docs state it is the COMPONENT's responsibility
+            // to render incoming wires for all its inputs. GH_ResizableAttributes
+            // does not do this automatically, so we delegate to each input param's
+            // own attributes. GH_LinkedParamAttributes.Render handles wire drawing
+            // (bezier curves from source output-grips to this input-grip) when
+            // called with the Wires channel.
+            if (channel == GH_CanvasChannel.Wires)
+            {
+                foreach (IGH_Param p in Owner.Params.Input)
+                    p.Attributes.RenderToCanvas(canvas, channel);
+                return;
+            }
+
             if (channel != GH_CanvasChannel.Objects) return;
 
             // Step 1 — Draw the GH capsule shape (the rounded rectangle with the
@@ -223,12 +240,26 @@ namespace gh
             _panel = null;
         }
 
-        // Called by ghComponent.SolveInstance whenever new data arrives on the
-        // input. Currently a stub — the TODO in ghComponent notes that this
-        // should forward the geometry/data into the WebView2 so it can display it.
-        public void UpdateWebView(IGH_Goo _)
+        // Called by ghComponent.SolveInstance whenever new data arrives on the input.
+        // Pattern-matches the IGH_Goo wrapper to extract the underlying RhinoCommon
+        // geometry object via .Value, then hands it off for serialization.
+        //
+        // GH wraps every geometry type in a thin GH_* class (Grasshopper.Kernel.Types).
+        // The mapping is:
+        //   GH_Brep    .Value → Rhino.Geometry.Brep
+        //   GH_Surface .Value → Rhino.Geometry.Brep  (single-face Brep in GH 8)
+        //   GH_Mesh    .Value → Rhino.Geometry.Mesh
+        //   GH_Curve   .Value → Rhino.Geometry.Curve  (base for Line/Arc/Nurbs/Polyline)
+        //   GH_Line    .Value → Rhino.Geometry.Line   (struct — never null)
+        //   GH_Point   .Value → Rhino.Geometry.Point3d (struct — never null)
+        public void UpdateWebView(IGH_StructureEnumerator goo_structure)
         {
-            if (_panel == null || _panel.IsDisposed) return;
+            if (_panel == null || _panel.IsDisposed || goo_structure == null) return;
+
+            var sendData = goo_structure.SerializeGeometry();
+            if(sendData == null || sendData.EventType == null) return;
+
+            _panel.PostMessage(sendData);
         }
     }
 }
