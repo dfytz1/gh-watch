@@ -257,10 +257,11 @@ namespace Gh.Watch
         {
             if (_panel == null || _panel.IsDisposed || goo_structure == null) return;
 
-            var sendData = goo_structure.SerializeGeometry();
-            if(sendData == null || sendData.EventType == null) return;
+            var data = goo_structure.SerializeObjects();
+            if (data.Count == 0) return;
 
-            _panel.SendGeometry(sendData);
+            foreach (var dto in data)
+                _panel.SendGeometry(dto);
         }
     }
 }

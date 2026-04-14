@@ -1,37 +1,21 @@
-import { useEffect, useMemo } from "react";
-import { BufferGeometry, Float32BufferAttribute } from "three";
-import type { ICurvePayload } from "../props/payload-props/curve-props";
+import { useEffect } from "react";
+import { LineBasicMaterial } from "three";
+import type { BufferGeometry } from "three";
 
-interface Props {
-  curves: ICurvePayload[];
+interface CurveViewProps {
+  geometry: BufferGeometry;
 }
 
-const CurveView = ({ curves }: Props) => {
-  const geometry = useMemo<BufferGeometry | null>(() => {
-    if (curves.length === 0) return null;
-    const positions: number[] = [];
-    for (const curve of curves) {
-      const buf = curve.buffer;
-      for (let i = 0; i < buf.length - 3; i += 3) {
-        positions.push(buf[i], buf[i + 1], buf[i + 2], buf[i + 3], buf[i + 4], buf[i + 5]);
-      }
-    }
-    const geo = new BufferGeometry();
-    geo.setAttribute("position", new Float32BufferAttribute(new Float32Array(positions), 3));
-    return geo;
-  }, [curves]);
+const lineMaterial = new LineBasicMaterial({ color: "#444444" });
 
+const CurveView: React.FC<CurveViewProps> = ({ geometry }) => {
   useEffect(() => {
-    return () => { geometry?.dispose(); };
+    return () => {
+      geometry.dispose();
+    };
   }, [geometry]);
 
-  if (!geometry) return null;
-
-  return (
-    <lineSegments geometry={geometry}>
-      <lineBasicMaterial color="#44aaff" />
-    </lineSegments>
-  );
+  return <lineSegments geometry={geometry} material={lineMaterial} />;
 };
 
 export default CurveView;

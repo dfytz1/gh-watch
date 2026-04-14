@@ -1,14 +1,14 @@
 import { useEffect, useRef } from "react";
 import { BufferGeometry, Float32BufferAttribute, LineBasicMaterial, LineSegments } from "three";
-import type { IBrepEdgesPayload } from "../props/payload-props/IBrepEdgesPayload";
+import type { IMeshEdgesPayload } from "../props/payload-props/IMeshEdgesPayload";
 
-interface BrepEdgesViewProps {
-  payload: IBrepEdgesPayload;
+interface MeshEdgesViewProps {
+  payload: IMeshEdgesPayload;
 }
 
-// Renders Brep/Surface edges as LineSegments.
+// Renders mesh topology edges as LineSegments.
 // buffer format: [x0s,y0s,z0s, x0e,y0e,z0e,  x1s,y1s,z1s, x1e,y1e,z1e, ...]
-const BrepEdgesView: React.FC<BrepEdgesViewProps> = ({ payload }) => {
+const MeshEdgesView: React.FC<MeshEdgesViewProps> = ({ payload }) => {
   const linesRef = useRef<LineSegments>(null);
 
   useEffect(() => {
@@ -26,10 +26,10 @@ const BrepEdgesView: React.FC<BrepEdgesViewProps> = ({ payload }) => {
 
   return (
     <primitive
-      object={new LineSegments(new BufferGeometry(), new LineBasicMaterial({ color: "#222222" }))}
+      object={new LineSegments(new BufferGeometry(), new LineBasicMaterial({ color: "#333333" }))}
       ref={linesRef}
     />
   );
 };
 
-export default BrepEdgesView;
+export default MeshEdgesView;

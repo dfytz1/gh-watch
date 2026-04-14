@@ -58,4 +58,5 @@ nunit-*.xml
 .vs/
 
 #claude
-claude/
+.claude/
+CLAUDE.md

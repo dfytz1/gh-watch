@@ -1,12 +1,14 @@
 import { create } from "zustand";
-import type { IMeshPayload } from "../props/payload-props/mesh-props";
-import type { IPointPayload } from "../props/payload-props/point-props";
-import type { ICurvePayload } from "../props/payload-props/curve-props";
-import type { ILinePayload } from "../props/payload-props/line-props";
-import type { IBrepEdgesPayload } from "../props/payload-props/brep-edges-props";
-import type { IMeshEdgesPayload } from "../props/payload-props/mesh-edges-props";
+import type { IMeshPayload } from "../props/payload-props/IMeshPayload";
+import type { IPointPayload } from "../props/payload-props/IPointPayload";
+import type { ICurvePayload } from "../props/payload-props/ICurvePayload";
+import type { ILinePayload } from "../props/payload-props/ILinePayload";
+import type { IBrepEdgesPayload } from "../props/payload-props/IBrepEdgesPayload";
+import type { IMeshEdgesPayload } from "../props/payload-props/IMeshEdgesPayload";
+import type { IGenericPayload } from "../props/payload-props/IGenericPayload";
 
 interface GeometryStoreState {
+  breps: IGenericPayload[];
   meshes: IMeshPayload[];
   points: IPointPayload[];
   curves: ICurvePayload[];
@@ -20,10 +22,12 @@ interface GeometryStoreState {
     lines: ILinePayload[];
     brepEdges: IBrepEdgesPayload[];
     meshEdges: IMeshEdgesPayload[];
+    breps: IGenericPayload[];
   }) => void;
 }
 
 export const useGeometryStore = create<GeometryStoreState>()((set) => ({
+  breps: [],
   meshes: [],
   points: [],
   curves: [],

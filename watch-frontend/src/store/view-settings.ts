@@ -4,8 +4,6 @@ import { persist } from "zustand/middleware";
 export type CameraMode = "perspective" | "orthographic";
 
 interface ViewSettingsState {
-  showEdges: boolean;
-  toggleEdges: () => void;
   zoomToFitRequest: number;
   requestZoomToFit: () => void;
   cameraMode: CameraMode;
@@ -15,8 +13,6 @@ interface ViewSettingsState {
 export const useViewSettings = create<ViewSettingsState>()(
   persist(
     (set) => ({
-      showEdges: true,
-      toggleEdges: () => set((state) => ({ showEdges: !state.showEdges })),
       zoomToFitRequest: 0,
       requestZoomToFit: () =>
         set((state) => ({ zoomToFitRequest: state.zoomToFitRequest + 1 })),
@@ -28,7 +24,7 @@ export const useViewSettings = create<ViewSettingsState>()(
     }),
     {
       name: "gh-watch-view-settings",
-      partialize: (state) => ({ showEdges: state.showEdges, cameraMode: state.cameraMode }),
+      partialize: (state) => ({ cameraMode: state.cameraMode }),
     },
   ),
 );

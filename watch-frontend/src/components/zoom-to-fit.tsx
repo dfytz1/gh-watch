@@ -2,37 +2,7 @@ import { useEffect, useRef } from "react";
 import { useThree } from "@react-three/fiber";
 import { Box3, Vector3, PerspectiveCamera, OrthographicCamera } from "three";
 import { useViewSettings } from "../store/view-settings";
-import { useGeometryStore } from "../store/geometry-store";
-
-function computeBoundingBox(): Box3 {
-  const { meshes, points, curves, lines } = useGeometryStore.getState();
-  const box = new Box3();
-
-  for (const mesh of meshes)
-    for (let i = 0; i < mesh.vertices.length; i += 3)
-      box.expandByPoint(
-        new Vector3(
-          mesh.vertices[i],
-          mesh.vertices[i + 1],
-          mesh.vertices[i + 2],
-        ),
-      );
-
-  for (const pt of points) box.expandByPoint(new Vector3(pt.x, pt.y, pt.z));
-
-  for (const curve of curves)
-    for (let i = 0; i < curve.buffer.length; i += 3)
-      box.expandByPoint(
-        new Vector3(curve.buffer[i], curve.buffer[i + 1], curve.buffer[i + 2]),
-      );
-
-  for (const line of lines) {
-    box.expandByPoint(new Vector3(line.start[0], line.start[1], line.start[2]));
-    box.expandByPoint(new Vector3(line.end[0], line.end[1], line.end[2]));
-  }
-
-  return box;
-}
+import { useSceneStore } from "../store/scene-store";
 
 const ZoomToFit = () => {
   const get = useThree((state) => state.get);
@@ -43,11 +13,13 @@ const ZoomToFit = () => {
     if (request === 0 || request === prevRequest.current) return;
     prevRequest.current = request;
 
-    const { camera, controls, size } = get();
+    const { sceneObject } = useSceneStore.getState();
+    if (!sceneObject) return;
 
-    const box = computeBoundingBox();
+    const box = new Box3().setFromObject(sceneObject);
     if (box.isEmpty()) return;
 
+    const { camera, controls, size } = get();
     const center = box.getCenter(new Vector3());
     const sizeVec = box.getSize(new Vector3());
     const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
