@@ -66,14 +66,14 @@ namespace Gh.Watch.Serialization
                         break;
                     case GH_Curve gh_Cv:
                         {
-                                file.Objects.AddCurve(gh_Cv.Value);
-                       
+                            file.Objects.AddCurve(gh_Cv.Value);
+
                         }
                         break;
                     case GH_Line gh_Line:
                         {
-                           
-                           file.Objects.AddLine(gh_Line.Value);
+
+                            file.Objects.AddLine(gh_Line.Value);
                         }
                         break;
                     case GH_Point gh_Pt:
