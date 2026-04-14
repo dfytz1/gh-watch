@@ -64,6 +64,32 @@ namespace Gh.Watch.Serialization
                             file.AddBrepEdgesToFile(brp);
                         }
                         break;
+                        case GH_Mesh ghMesh:
+                        {
+                            var msh = ghMesh.Value;
+                            mesh_payload.Add(new GenericPayloadDto
+                            {
+                                Data = msh.ToJSON(s_opt),
+                            });
+                            file.AddMeshEdgesToFile(msh);
+                        }
+                        break;
+                        case GH_Arc ghArc:
+                        { 
+                            var arc = ghArc.Value;
+                            file.Objects.AddArc(arc);
+                        }
+                        break;
+                        case GH_Circle ghCircle:
+                        {
+                            var circle = ghCircle.Value;
+                            file.Objects.AddCircle(circle);
+                        } break;
+                        case GH_Rectangle ghRectangle:
+                        {
+                            var rectangle = ghRectangle.Value;
+                            file.Objects.AddCurve(rectangle.ToNurbsCurve());
+                        } break;
                     case GH_Curve gh_Cv:
                         {
                             file.Objects.AddCurve(gh_Cv.Value);
