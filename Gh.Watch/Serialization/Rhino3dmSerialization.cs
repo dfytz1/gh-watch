@@ -64,7 +64,7 @@ namespace Gh.Watch.Serialization
                             file.AddBrepEdgesToFile(brp);
                         }
                         break;
-                        case GH_Mesh ghMesh:
+                    case GH_Mesh ghMesh:
                         {
                             var msh = ghMesh.Value;
                             file.Objects.AddMesh(msh);
@@ -75,22 +75,24 @@ namespace Gh.Watch.Serialization
                             file.AddMeshEdgesToFile(msh);
                         }
                         break;
-                        case GH_Arc ghArc:
-                        { 
+                    case GH_Arc ghArc:
+                        {
                             var arc = ghArc.Value;
                             file.Objects.AddArc(arc);
                         }
                         break;
-                        case GH_Circle ghCircle:
+                    case GH_Circle ghCircle:
                         {
                             var circle = ghCircle.Value;
                             file.Objects.AddCircle(circle);
-                        } break;
-                        case GH_Rectangle ghRectangle:
+                        }
+                        break;
+                    case GH_Rectangle ghRectangle:
                         {
                             var rectangle = ghRectangle.Value;
                             file.Objects.AddCurve(rectangle.ToNurbsCurve());
-                        } break;
+                        }
+                        break;
                     case GH_Curve gh_Cv:
                         {
                             file.Objects.AddCurve(gh_Cv.Value);
@@ -118,37 +120,24 @@ namespace Gh.Watch.Serialization
                 }
             }
 
-     
-                dataDtos.Add(new SendDataDto
-                {
-                    EventType = GeometryType.Mesh,
-                    Payload = brep_payload
-                });
+
+            dataDtos.Add(new SendDataDto
+            {
+                EventType = GeometryType.Mesh,
+                Payload = brep_payload
+            });
 
 
- 
-                dataDtos.Add(new SendDataDto
-                {
-                    EventType = SendToWebvViewCommand.Send_File_Geometry,
-                    Payload = file.ToByteArray()
-                });
+
+            dataDtos.Add(new SendDataDto
+            {
+                EventType = SendToWebvViewCommand.Send_File_Geometry,
+                Payload = file.ToByteArray()
+            });
 
             return dataDtos;
 
         }
-        static IEnumerable<GenericPayloadDto> GetEdgePayload(this Brep brp, SerializationOptions s_opt)
-        {
 
-            foreach (var edge in brp.Edges)
-            {
-                yield return new GenericPayloadDto
-                {
-                    Data = edge.ToJSON(s_opt),
-                };
-            }
-
-        }
     }
-
-
 }
