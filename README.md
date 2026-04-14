@@ -49,6 +49,15 @@ Open `Gh.Watch/GrasshopperWatch.sln` in Visual Studio 2022 / 2026 and build. Cop
 
 Restart Rhino, open Grasshopper, and find the **Watch** component under `Display > Preview`.
 
+**Debugging the C# plugin**
+
+1. Press **F5** — Visual Studio builds, copies the `.gha`, launches Rhino, and attaches the debugger
+2. Set breakpoints anywhere in the C# source; they will hit when the Watch component solves
+
+**Debugging the frontend**
+
+ `npm install` then `npm run dev` to get frontend running, select watch panel in Grasshopper and press **F12**. This opens a Chromium DevTools window where you can set breakpoints, view the console, and step through TypeScript source maps exactly as in a normal browser.
+
 ## Project Structure
 
 ```
