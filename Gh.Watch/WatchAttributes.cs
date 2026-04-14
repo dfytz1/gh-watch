@@ -69,11 +69,18 @@ namespace Gh.Watch
             {
                 var p = Owner.Params.Input[0];
                 float y = Bounds.Y + HeaderHeight * 0.5f;
-                p.Attributes.Pivot = new PointF(Bounds.Left, y);
+
+                // GH_Capsule draws the grip nub slightly inside the rounded left
+                // border — its centre sits ~23 canvas units to the right of Bounds.Left.
+                // The wire bezier terminates at Pivot, so Pivot must match that centre
+                // exactly; without this offset the wire visibly stops short of the nub.
+                const float GripOffset = 23f;
+
+                p.Attributes.Pivot = new PointF(Bounds.Left + GripOffset, y);
                 // Span the full header height (not just ±5 px around the nub) so
                 // IsTooltipRegion fires reliably and wire-drop hit-testing has a
                 // comfortable target no matter the canvas zoom level.
-                p.Attributes.Bounds = new RectangleF(Bounds.Left - 20f, Bounds.Y, 20f, HeaderHeight);
+                p.Attributes.Bounds = new RectangleF(Bounds.Left - 20f + GripOffset, Bounds.Y, 20f, HeaderHeight);
             }
         }
 
@@ -236,7 +243,7 @@ namespace Gh.Watch
         {
             if (_panel == null || _panel.IsDisposed) return;
             canvas?.Controls.Remove(_panel);
-            
+
             _panel.Dispose();
             _panel = null;
         }
