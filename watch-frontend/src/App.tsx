@@ -10,7 +10,6 @@ import GeometryView from "./geometry-views/geometry-view";
 import Toolbar from "./components/toolbar";
 import ZoomToFit from "./components/zoom-to-fit";
 import CameraManager from "./components/camera-manager";
-import { Perf } from "r3f-perf";
 
 function Scene() {
   return (

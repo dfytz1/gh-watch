@@ -11,7 +11,6 @@ const GeometryView = () => {
   const [fileArray, setFileArray] = useState<Uint8Array | null>(null);
   const [brepGeometry, setBrepGeometry] = useState<BufferGeometry | null>(null);
 
-
   useEffect(() => {
     const unregister = registerWebViewMessageHandlers({
       /**for curve use file based approach */
@@ -33,15 +32,14 @@ const GeometryView = () => {
         setFileArray(bytes);
       },
       brep: async (payload: IGenericPayload[]) => {
-
         const geo = await processDirectGeometry(payload);
-       
+
         if (geo) setBrepGeometry(geo);
       },
     });
 
     return () => {
-      unregister();
+      unregister?.();
     };
   }, []);
 
