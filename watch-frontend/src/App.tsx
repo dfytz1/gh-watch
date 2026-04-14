@@ -1,10 +1,16 @@
 import { Canvas } from "@react-three/fiber";
-import { OrbitControls, Grid, GizmoHelper, GizmoViewport } from "@react-three/drei";
+import {
+  OrbitControls,
+  Grid,
+  GizmoHelper,
+  GizmoViewport,
+} from "@react-three/drei";
 import { DoubleSide } from "three";
 import GeometryView from "./geometry-views/geometry-view";
 import Toolbar from "./components/toolbar";
 import ZoomToFit from "./components/zoom-to-fit";
 import CameraManager from "./components/camera-manager";
+import { Perf } from "r3f-perf";
 
 function Scene() {
   return (
@@ -33,9 +39,13 @@ function Scene() {
 
       <OrbitControls makeDefault />
       <ZoomToFit />
+      {/* <Perf position="top-left" /> */}
       <CameraManager />
       <GizmoHelper alignment="bottom-right" margin={[60, 60]}>
-        <GizmoViewport axisColors={["#ff4060", "#80ff80", "#4080ff"]} labelColor="white" />
+        <GizmoViewport
+          axisColors={["#ff4060", "#80ff80", "#4080ff"]}
+          labelColor="white"
+        />
       </GizmoHelper>
     </>
   );

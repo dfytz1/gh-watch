@@ -2,6 +2,7 @@ using Gh.Watch.Dtos;
 using Microsoft.Web.WebView2.Core;
 using Newtonsoft.Json;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Threading.Tasks;
@@ -55,7 +56,9 @@ namespace Gh.Watch
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"WebView2 init failed: {ex}");
+                #if DEBUG
+                Debug.WriteLine($"WebView2 init failed: {ex}");
+                #endif
             }
         }
 

@@ -1,54 +1,34 @@
-import { useEffect, useMemo } from "react";
-import {
-  BufferGeometry,
-  Float32BufferAttribute,
-  Uint32BufferAttribute,
-} from "three";
-import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import type { IMeshPayload } from "../props/payload-props/mesh-props";
+import { useEffect, useRef } from "react";
+import { BufferGeometry, Float32BufferAttribute, Int32BufferAttribute, Mesh, MeshStandardMaterial } from "three";
+import type { IMeshPayload } from "../props/payload-props/IMeshPayload";
 
-interface Props {
-  meshes: IMeshPayload[];
+interface MeshViewProps {
+  payload: IMeshPayload;
 }
 
-function buildGeometry({
-  vertices,
-  normals,
-  faces,
-}: IMeshPayload): BufferGeometry {
-  const geo = new BufferGeometry();
-  geo.setAttribute(
-    "position",
-    new Float32BufferAttribute(new Float32Array(vertices), 3),
-  );
-  geo.setAttribute(
-    "normal",
-    new Float32BufferAttribute(new Float32Array(normals), 3),
-  );
-  geo.setIndex(new Uint32BufferAttribute(new Uint32Array(faces), 1));
-  return geo;
-}
-
-const MeshView = ({ meshes }: Props) => {
-  const geometry = useMemo<BufferGeometry | null>(() => {
-    if (meshes.length === 0) return null;
-    const individual = meshes.map(buildGeometry);
-    const merged = mergeGeometries(individual);
-    individual.forEach((g) => g.dispose());
-    return merged;
-  }, [meshes]);
+const MeshView: React.FC<MeshViewProps> = ({ payload }) => {
+  const meshRef = useRef<Mesh>(null);
 
   useEffect(() => {
-    return () => {
-      geometry?.dispose();
-    };
-  }, [geometry]);
+    const mesh = meshRef.current;
+    if (!mesh) return;
 
-  if (!geometry) return null;
+    const prev = mesh.geometry;
+
+    const geo = new BufferGeometry();
+    geo.setAttribute("position", new Float32BufferAttribute(new Float32Array(payload.vertices), 3));
+    geo.setAttribute("normal", new Float32BufferAttribute(new Float32Array(payload.normals), 3));
+    geo.setIndex(new Int32BufferAttribute(new Int32Array(payload.faces), 1));
+
+    mesh.geometry = geo;
+
+    prev.dispose();
+  }, [payload]);
 
   return (
-    <mesh geometry={geometry}>
-      <meshStandardMaterial color="#888888" side={2} transparent opacity={0.5} />
+    <mesh ref={meshRef}>
+      <bufferGeometry />
+      <meshStandardMaterial color="#888888" transparent opacity={0.5} side={2} />
     </mesh>
   );
 };

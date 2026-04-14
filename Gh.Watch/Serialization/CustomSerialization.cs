@@ -1,4 +1,4 @@
-using Gh.Watch.Constants;
+﻿using Gh.Watch.Constants;
 using Gh.Watch.Dtos;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -9,7 +9,7 @@ using System.Collections.Generic;
 namespace Gh.Watch.Serialization
 {
 
-    public static class SerializationHelper
+    public static class CustomSerialization
     {
         // FastRenderMesh is Rhino's built-in low-quality preset — fastest meshing,
         // good enough for a live preview. Swap for MeshingParameters.Default if
@@ -27,7 +27,7 @@ namespace Gh.Watch.Serialization
 
             if (payload.Count == 0) return null;
 
-            sendData.EventType = SendToWebvViewCommand.Send_Geometry;
+            sendData.EventType = SendToWebvViewCommand.Send_Custom_Geometry;
             sendData.Payload = payload;
             return sendData;
         }
@@ -39,44 +39,44 @@ namespace Gh.Watch.Serialization
             {
                 // Brep: solid, polysurface, single face — mesh + real edges
                 case GH_Brep ghBrep when ghBrep.Value != null:
-                {
-                    var mesh = MeshPayload(MeshFromBrep(ghBrep.Value));
-                    if (mesh != null) yield return mesh;
-                    var edges = BrepEdgesPayload(ghBrep.Value);
-                    if (edges != null) yield return edges;
-                    yield break;
-                }
+                    {
+                        var mesh = MeshPayload(MeshFromBrep(ghBrep.Value));
+                        if (mesh != null) yield return mesh;
+                        var edges = BrepEdgesPayload(ghBrep.Value);
+                        if (edges != null) yield return edges;
+                        yield break;
+                    }
 
                 // Surface: GH 8 stores this as a single-face Brep already
                 case GH_Surface ghSurface when ghSurface.Value != null:
-                {
-                    var mesh = MeshPayload(MeshFromBrep(ghSurface.Value));
-                    if (mesh != null) yield return mesh;
-                    var edges = BrepEdgesPayload(ghSurface.Value);
-                    if (edges != null) yield return edges;
-                    yield break;
-                }
+                    {
+                        var mesh = MeshPayload(MeshFromBrep(ghSurface.Value));
+                        if (mesh != null) yield return mesh;
+                        var edges = BrepEdgesPayload(ghSurface.Value);
+                        if (edges != null) yield return edges;
+                        yield break;
+                    }
 
                 // Box: convert to Brep first, then mesh + edges
                 case GH_Box ghBox:
-                {
-                    var brep = ghBox.Value.ToBrep();
-                    var mesh = MeshPayload(MeshFromBrep(brep));
-                    if (mesh != null) yield return mesh;
-                    var edges = BrepEdgesPayload(brep);
-                    if (edges != null) yield return edges;
-                    yield break;
-                }
+                    {
+                        var brep = ghBox.Value.ToBrep();
+                        var mesh = MeshPayload(MeshFromBrep(brep));
+                        if (mesh != null) yield return mesh;
+                        var edges = BrepEdgesPayload(brep);
+                        if (edges != null) yield return edges;
+                        yield break;
+                    }
 
                 // Mesh: send topology edges first (before ConvertQuadsToTriangles mutates the mesh),
                 // then send the triangulated mesh payload
                 case GH_Mesh ghMesh when ghMesh.Value != null:
-                {
-                    var meshEdges = MeshEdgesPayload(ghMesh.Value);
-                    if (meshEdges != null) yield return meshEdges;
-                    yield return MeshPayload(ghMesh.Value);
-                    yield break;
-                }
+                    {
+                        var meshEdges = MeshEdgesPayload(ghMesh.Value);
+                        if (meshEdges != null) yield return meshEdges;
+                        yield return MeshPayload(ghMesh.Value);
+                        yield break;
+                    }
 
                 // Curve: sample into a polyline and send as flat point array.
                 // Covers LineCurve, ArcCurve, NurbsCurve, PolylineCurve, etc.
@@ -212,8 +212,8 @@ namespace Gh.Watch.Serialization
             {
                 Line edge = mesh.TopologyEdges.EdgeLine(i);
                 int idx = i * 6;
-                buffer[idx]     = (float)edge.From.X; buffer[idx + 1] = (float)edge.From.Y; buffer[idx + 2] = (float)edge.From.Z;
-                buffer[idx + 3] = (float)edge.To.X;   buffer[idx + 4] = (float)edge.To.Y;   buffer[idx + 5] = (float)edge.To.Z;
+                buffer[idx] = (float)edge.From.X; buffer[idx + 1] = (float)edge.From.Y; buffer[idx + 2] = (float)edge.From.Z;
+                buffer[idx + 3] = (float)edge.To.X; buffer[idx + 4] = (float)edge.To.Y; buffer[idx + 5] = (float)edge.To.Z;
             }
 
             return new MeshEdgesPayloadDto { Buffer = buffer };
@@ -236,7 +236,7 @@ namespace Gh.Watch.Serialization
                     Point3d from = edge.PointAtStart;
                     Point3d to = edge.PointAtEnd;
                     segments.Add((float)from.X); segments.Add((float)from.Y); segments.Add((float)from.Z);
-                    segments.Add((float)to.X);   segments.Add((float)to.Y);   segments.Add((float)to.Z);
+                    segments.Add((float)to.X); segments.Add((float)to.Y); segments.Add((float)to.Z);
                 }
                 else
                 {

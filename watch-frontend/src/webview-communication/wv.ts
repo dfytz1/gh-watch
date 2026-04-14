@@ -30,6 +30,7 @@ interface MessageHandlerMap {
 }
 
 export const registerWebViewMessageHandlers = (handlers: MessageHandlerMap) => {
+  if (window.chrome === undefined || !window.chrome.webview) return;
   const messageListener = async (event: any) => {
     if (!window.chrome) {
       return;
