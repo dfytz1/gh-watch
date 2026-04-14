@@ -18,8 +18,8 @@ namespace Gh.Watch.Extensions
         {
             var faces = mesh.Faces;
 
-                foreach (var face in faces)
-                {
+            foreach (var face in faces)
+            {
                 //get polyline for each face
                 var pl = new Polyline();
 
@@ -30,13 +30,7 @@ namespace Gh.Watch.Extensions
 
                 file.Objects.AddPolyline(pl);
             }
-       
 
-            //foreach (var edge in mesh.TopologyEdges)
-            //{
-            //    var curve = mesh.TopologyEdgeLine(edge);
-            //    file.Objects.AddCurve(curve);
-            //}
         }
     }
 }
