@@ -67,10 +67,11 @@ namespace Gh.Watch.Serialization
                         case GH_Mesh ghMesh:
                         {
                             var msh = ghMesh.Value;
-                            mesh_payload.Add(new GenericPayloadDto
-                            {
-                                Data = msh.ToJSON(s_opt),
-                            });
+                            file.Objects.AddMesh(msh);
+                            //mesh_payload.Add(new GenericPayloadDto
+                            //{
+                            //    Data = msh.ToJSON(s_opt),
+                            //});
                             file.AddMeshEdgesToFile(msh);
                         }
                         break;
@@ -117,32 +118,20 @@ namespace Gh.Watch.Serialization
                 }
             }
 
-            if (brep_payload.Count > 0)
-            {
-                dataDtos.Add(new SendDataDto
-                {
-                    EventType = GeometryType.Brep,
-                    Payload = brep_payload
-                });
-            }
-
-            if (mesh_payload.Count > 0)
-            {
+     
                 dataDtos.Add(new SendDataDto
                 {
                     EventType = GeometryType.Mesh,
-                    Payload = mesh_payload
+                    Payload = brep_payload
                 });
-            }
 
-            if (file.Objects.Count > 0)
-            {
+
+ 
                 dataDtos.Add(new SendDataDto
                 {
                     EventType = SendToWebvViewCommand.Send_File_Geometry,
                     Payload = file.ToByteArray()
                 });
-            }
 
             return dataDtos;
 
