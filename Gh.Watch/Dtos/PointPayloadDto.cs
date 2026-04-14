@@ -1,8 +1,8 @@
-﻿using gh.Constants;
+﻿using Gh.Watch.Constants;
 using Newtonsoft.Json;
 
 
-namespace gh.Dtos
+namespace Gh.Watch.Dtos
 {
     public class PointPayloadDto
     {

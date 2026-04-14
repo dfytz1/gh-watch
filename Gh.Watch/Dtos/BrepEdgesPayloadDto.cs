@@ -1,7 +1,7 @@
-using gh.Constants;
+using Gh.Watch.Constants;
 using Newtonsoft.Json;
 
-namespace gh.Dtos
+namespace Gh.Watch.Dtos
 {
     // Flat float array of line-segment pairs ready for Three.js LineSegments.
     // Format: x0_start,y0_start,z0_start, x0_end,y0_end,z0_end,  <- segment 0

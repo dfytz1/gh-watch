@@ -1,12 +1,12 @@
-using gh.Constants;
-using gh.Dtos;
+using Gh.Watch.Constants;
+using Gh.Watch.Dtos;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 using Rhino;
 using Rhino.Geometry;
 using System.Collections.Generic;
 
-namespace gh.Serialization
+namespace Gh.Watch.Serialization
 {
 
     public static class SerializationHelper

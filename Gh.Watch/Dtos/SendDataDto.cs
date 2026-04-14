@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace gh.Dtos
+namespace Gh.Watch.Dtos
 {
     public class SendDataDto
     {

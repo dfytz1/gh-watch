@@ -1,15 +1,13 @@
 using System;
-using Grasshopper;
 using Grasshopper.Kernel;
-using Grasshopper.Kernel.Attributes;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 
-namespace gh
+namespace Gh.Watch
 {
-    public class ghComponent : GH_Component
+    public class Watch_Component : GH_Component
     {
-        public ghComponent()
+        public Watch_Component()
           : base("Watch", "watch",
               "Displays the geometry in the component itself. Useful for debugging.",
               "Display", "Preview")
