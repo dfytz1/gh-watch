@@ -1,6 +1,4 @@
-﻿
-
-using Gh.Watch.Constants;
+﻿using Gh.Watch.Constants;
 using Gh.Watch.Dtos;
 using Gh.Watch.Extensions;
 using Grasshopper.Kernel.Data;
@@ -64,6 +62,28 @@ namespace Gh.Watch.Serialization
                             });
 
                             file.AddBrepEdgesToFile(brp);
+                        }
+                        break;
+                    case GH_Curve gh_Cv:
+                        {
+                                file.Objects.AddCurve(gh_Cv.Value);
+                       
+                        }
+                        break;
+                    case GH_Line gh_Line:
+                        {
+                           
+                           file.Objects.AddLine(gh_Line.Value);
+                        }
+                        break;
+                    case GH_Point gh_Pt:
+                        {
+                            file.Objects.AddPoint(gh_Pt.Value);
+                        }
+                        break;
+                    case GH_PointCloud gh_PtCloud:
+                        {
+                            file.Objects.AddPointCloud(gh_PtCloud.Value);
                         }
                         break;
                     default:
