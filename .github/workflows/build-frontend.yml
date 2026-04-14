@@ -19,12 +19,12 @@ jobs:
         with:
           node-version: "22"
           cache: "npm"
-          cache-dependency-path: gh-watch-frontend/package-lock.json
+          cache-dependency-path: watch-frontend/package-lock.json
 
       - name: Install dependencies
-        working-directory: gh-watch-frontend
+        working-directory: watch-frontend
         run: npm ci
 
       - name: Build
-        working-directory: gh-watch-frontend
+        working-directory: watch-frontend
         run: npm run build
