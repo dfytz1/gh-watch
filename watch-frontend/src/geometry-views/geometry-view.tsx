@@ -31,7 +31,12 @@ const GeometryView = () => {
 
         setFileArray(bytes);
       },
-      brep: async (payload: IGenericPayload[]) => {
+      mesh: async (payload: IGenericPayload[]) => {
+        if (payload.length === 0) {
+          setBrepGeometry(null);
+          return;
+        }
+
         const geo = await processDirectGeometry(payload);
 
         if (geo) setBrepGeometry(geo);
