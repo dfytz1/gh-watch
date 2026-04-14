@@ -17,10 +17,10 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 
       - name: Restore dependencies
-        run: dotnet restore gh/gh.csproj
+        run: dotnet restore Gh.Watch/Gh.Watch.csproj
 
       - name: Build
-        run: dotnet build gh/gh.csproj --no-restore --configuration Release
+        run: dotnet build Gh.Watch/Gh.Watch.csproj --no-restore --configuration Release
