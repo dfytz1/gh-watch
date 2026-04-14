@@ -2,6 +2,8 @@
 
 A Grasshopper plugin that embeds a live 3D viewer directly inside a component on the canvas. Connect any geometry to the **Watch** component and inspect it in an interactive Three.js viewport — without leaving Grasshopper.
 
+![gh-watch demo](docs/gh_watch.gif)
+
 ## Features
 
 - Real-time geometry streaming from Rhino/Grasshopper into an embedded WebView2 panel

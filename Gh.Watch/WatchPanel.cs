@@ -40,8 +40,7 @@ namespace Gh.Watch
                 var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
 
                 // CreateCoreWebView2ControllerAsync takes our WinForms HWND directly —
-                // no WinForms WebView2 wrapper required, so no version conflict with
-                // the Core DLL that Rhino already has loaded in the process.
+                // no WinForms WebView2 wrapper required
                 _controller = await env.CreateCoreWebView2ControllerAsync(Handle);
                 _controller.Bounds = ClientRectangle;
 
