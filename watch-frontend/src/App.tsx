@@ -10,6 +10,8 @@ import GeometryView from "./geometry-views/geometry-view";
 import Toolbar from "./components/toolbar";
 import ZoomToFit from "./components/zoom-to-fit";
 import CameraManager from "./components/camera-manager";
+import { useEffect } from "react";
+import { getRhino } from "./rhino/get-rhino";
 
 function Scene() {
   return (
@@ -51,6 +53,10 @@ function Scene() {
 }
 
 export default function App() {
+  useEffect(() => {
+    getRhino();
+  }, []);
+
   return (
     <div
       style={{
