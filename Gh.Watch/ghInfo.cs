@@ -3,7 +3,7 @@ using System.Drawing;
 using Grasshopper;
 using Grasshopper.Kernel;
 
-namespace gh
+namespace Gh.Watch
 {
   public class ghInfo : GH_AssemblyInfo
   {

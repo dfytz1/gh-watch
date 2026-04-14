@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
-using gh.Serialization;
+using Gh.Watch.Serialization;
 using Grasshopper;
 using Grasshopper.GUI.Canvas;
 using Grasshopper.Kernel;
@@ -10,13 +10,13 @@ using Grasshopper.Kernel.Attributes;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
 
-namespace gh
+namespace Gh.Watch
 {
     // WatchAttributes controls how the Watch component looks and behaves on the
     // Grasshopper canvas. Every GH component has an "Attributes" object; by
     // subclassing GH_ResizableAttributes we get free drag-to-resize corner handles
     // while still being able to paint the component however we like.
-    public class WatchAttributes : GH_ResizableAttributes<ghComponent>
+    public class WatchAttributes : GH_ResizableAttributes<Watch_Component>
     {
         // Default pixel dimensions of the component when first placed on canvas.
         // HeaderHeight is the thin strip at the top that shows the name and grip.
@@ -33,7 +33,7 @@ namespace gh
         // hardware-accelerated web content that GDI+ cannot draw itself.
         private WatchPanel _panel;
 
-        public WatchAttributes(ghComponent owner) : base(owner)
+        public WatchAttributes(Watch_Component owner) : base(owner)
         {
             // Set an initial Bounds so the component has a sensible size before
             // GH calls Layout() for the first time.

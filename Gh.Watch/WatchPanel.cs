@@ -1,4 +1,4 @@
-using gh.Dtos;
+using Gh.Watch.Dtos;
 using Microsoft.Web.WebView2.Core;
 using Newtonsoft.Json;
 using System;
@@ -7,7 +7,7 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
-namespace gh
+namespace Gh.Watch
 {
     public class WatchPanel : UserControl
     {

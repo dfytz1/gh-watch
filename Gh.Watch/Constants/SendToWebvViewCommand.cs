@@ -1,6 +1,6 @@
 ﻿
 
-namespace gh.Constants
+namespace Gh.Watch.Constants
 {
     public class SendToWebvViewCommand
     {
