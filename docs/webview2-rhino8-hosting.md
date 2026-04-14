@@ -2,7 +2,8 @@
 
 ## Problem
 
-When hosting WebView2 inside a WinForms `UserControl` (used as a Grasshopper panel),
+When hosting WebView2 inside a WinForms `UserControl` using
+`Microsoft.Web.WebView2.WinForms.WebView2` (the standard managed wrapper control),
 calling `EnsureCoreWebView2Async` throws:
 
 ```
@@ -11,38 +12,36 @@ System.MissingMethodException: Method not found:
    at Microsoft.Web.WebView2.WinForms.WebView2.InitCoreWebView2Async(...)
 ```
 
+This happens **regardless of which NuGet SDK version is used**.
+
 ## Root Cause
 
-Rhino 8 ships its own `Microsoft.Web.WebView2.Core.dll` (v1.0.1938.49) from
-`C:\Program Files\Rhino 8\System\`. It also ships `Microsoft.Web.WebView2.Wpf.dll`
-but **not** `Microsoft.Web.WebView2.WinForms.dll`.
-
-Rhino's Core DLL is a **patched build** missing some APIs that exist in the official
-NuGet release at the same version — including `CoreWebView2Profile.add_Deleted`
-(introduced in SDK ~1.0.2210). Because Rhino loads its Core DLL into the process
-before any plugin, the NuGet WinForms wrapper always resolves against Rhino's patched
-DLL and fails, regardless of which NuGet SDK version you specify.
+Rhino 8 ships a patched `Microsoft.Web.WebView2.Core.dll` from
+`C:\Program Files\Rhino 8\System\` that is missing `CoreWebView2Profile.add_Deleted`.
+Rhino loads this DLL into the process at startup. The `Microsoft.Web.WebView2.WinForms.WebView2`
+managed control calls `add_Deleted` internally during initialisation and hits the
+missing method — the NuGet package version makes no difference because Rhino's Core DLL
+is always the one in-process.
 
 ## Fix
 
-Do **not** use the `Microsoft.Web.WebView2` NuGet package. Instead:
+Do **not** use `Microsoft.Web.WebView2.WinForms.WebView2` as a hosted control.
+Use `CoreWebView2Environment` + `CoreWebView2Controller` with the WinForms control's
+raw HWND instead. This bypasses the WinForms wrapper entirely and only touches Core
+APIs that exist in Rhino's DLL.
 
-1. Reference Rhino's Core DLL directly at compile time (not copied to output).
-2. Use `CoreWebView2Environment` + `CoreWebView2Controller` with the WinForms
-   control's raw HWND — no WinForms wrapper needed.
+The `Microsoft.Web.WebView2` NuGet package can remain at any version (including
+prerelease) — it is only needed for compile-time types.
 
 ### gh.csproj
 
 ```xml
 <ItemGroup>
-  <!-- Compile-time reference to Rhino's own Core DLL.
-       Private=false → not copied to output; Rhino loads it at runtime. -->
-  <Reference Include="Microsoft.Web.WebView2.Core">
-    <HintPath>C:\Program Files\Rhino 8\System\Microsoft.Web.WebView2.Core.dll</HintPath>
-    <Private>false</Private>
-  </Reference>
+  <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3965-prerelease" />
 </ItemGroup>
 ```
+
+No special `Private` or `ExcludeAssets` flags needed.
 
 ### WatchPanel.cs
 
@@ -69,7 +68,9 @@ public class WatchPanel : UserControl
 
         var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
 
-        // Pass the WinForms HWND directly — no WinForms wrapper DLL required.
+        // Pass the WinForms HWND directly.
+        // This avoids the WinForms WebView2 wrapper control, which internally calls
+        // CoreWebView2Profile.add_Deleted — a method missing from Rhino's patched Core DLL.
         _controller = await env.CreateCoreWebView2ControllerAsync(Handle);
         _controller.Bounds = ClientRectangle;
 
@@ -94,7 +95,8 @@ public class WatchPanel : UserControl
 ## Why This Works
 
 `CoreWebView2Environment.CreateAsync` and `CreateCoreWebView2ControllerAsync` are
-fundamental APIs present since WebView2's earliest releases. By passing the WinForms
-control's `Handle` (Win32 HWND) directly, WebView2 creates a native child window
-inside the control — identical to what the managed WinForms wrapper does internally,
-but without calling any of the newer APIs that Rhino's patched Core DLL is missing.
+fundamental APIs present in WebView2 since its earliest releases — Rhino's patched
+Core DLL has them. By passing the WinForms control's `Handle` (Win32 HWND) directly,
+WebView2 creates a native child window inside the control, which is exactly what the
+managed wrapper does internally — just without the newer API calls that Rhino's DLL
+is missing.

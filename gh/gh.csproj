@@ -24,17 +24,18 @@
     <Description>Gh-watch add-in</Description>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Reference Rhino's own WebView2 DLLs directly so there is zero version mismatch.
-         Private=false means they are NOT copied to output; Rhino already loads them. -->
+  <!--<ItemGroup>
+    --><!-- Reference Rhino's own WebView2 DLLs directly so there is zero version mismatch.
+         Private=false means they are NOT copied to output; Rhino already loads them. --><!--
     <Reference Include="Microsoft.Web.WebView2.Core">
       <HintPath>C:\Program Files\Rhino 8\System\Microsoft.Web.WebView2.Core.dll</HintPath>
       <Private>false</Private>
     </Reference>
-  </ItemGroup>
+  </ItemGroup>-->
 
   <ItemGroup>
 	  <PackageReference Include="Grasshopper" Version="8.29.26063.11001" ExcludeAssets="runtime" />
+	  <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3965-prerelease" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
