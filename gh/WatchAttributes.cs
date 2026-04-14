@@ -260,7 +260,7 @@ namespace gh
             var sendData = goo_structure.SerializeGeometry();
             if(sendData == null || sendData.EventType == null) return;
 
-            //_panel.PostMessage(sendData);
+            _panel.SendGeometry(sendData);
         }
     }
 }
