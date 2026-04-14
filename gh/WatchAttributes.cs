@@ -236,6 +236,7 @@ namespace gh
         {
             if (_panel == null || _panel.IsDisposed) return;
             canvas?.Controls.Remove(_panel);
+            
             _panel.Dispose();
             _panel = null;
         }
@@ -259,7 +260,7 @@ namespace gh
             var sendData = goo_structure.SerializeGeometry();
             if(sendData == null || sendData.EventType == null) return;
 
-            _panel.PostMessage(sendData);
+            _panel.SendGeometry(sendData);
         }
     }
 }

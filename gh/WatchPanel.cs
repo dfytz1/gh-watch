@@ -1,86 +1,85 @@
+using gh.Dtos;
+using Microsoft.Web.WebView2.Core;
+using Newtonsoft.Json;
 using System;
 using System.Drawing;
 using System.IO;
+using System.Threading.Tasks;
 using System.Windows.Forms;
-using gh.Dtos;
-using Microsoft.Web.WebView2.Core;
-using Microsoft.Web.WebView2.WinForms;
-using Newtonsoft.Json;
 
 namespace gh
 {
     public class WatchPanel : UserControl
     {
-        private WebView2 _webView;
+        private CoreWebView2Controller _controller;
+        private CoreWebView2 _webView;
 
         public WatchPanel()
         {
             BackColor = Color.White;
             DoubleBuffered = true;
-
-            _webView = new WebView2 { Dock = DockStyle.Fill };
-            Controls.Add(_webView);
-
-            InitAsync();
         }
 
-        private async void InitAsync()
+        // OnHandleCreated fires once the native HWND exists, which is required
+        // for CoreWebView2Environment.CreateCoreWebView2ControllerAsync.
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            _ = InitWebViewAsync();
+        }
+
+        private async Task InitWebViewAsync()
         {
             try
             {
-                var userDatFolder = "gh-watch-webview";
-                string userDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-                string path = Path.Combine(userDirectory, userDatFolder);
-                if (!Directory.Exists(path))
-                {
-                    Directory.CreateDirectory(path); // ensure it exists
-                }
+                var userDataFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "gh-watch-webview");
 
-                var env = await CoreWebView2Environment.CreateAsync(
-                    userDataFolder: path,
-                    options: new CoreWebView2EnvironmentOptions()
-                );
-                await _webView.EnsureCoreWebView2Async(env);
-                _webView.CoreWebView2.Navigate("http://localhost:5173");
+                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
+
+                // CreateCoreWebView2ControllerAsync takes our WinForms HWND directly —
+                // no WinForms WebView2 wrapper required, so no version conflict with
+                // the Core DLL that Rhino already has loaded in the process.
+                _controller = await env.CreateCoreWebView2ControllerAsync(Handle);
+                _controller.Bounds = ClientRectangle;
+
+                _webView = _controller.CoreWebView2;
+                _webView.Navigate("http://localhost:5173");
+
+                Resize += (s, args) =>
+                {
+                    if (_controller != null)
+                        _controller.Bounds = ClientRectangle;
+                };
             }
             catch (Exception ex)
             {
-                ShowError(ex.Message);
+                System.Diagnostics.Debug.WriteLine($"WebView2 init failed: {ex}");
             }
         }
 
-        private void ShowError(string message)
+        public void SendGeometry(SendDataDto dto)
         {
-            _webView.Visible = false;
-            Invalidate();
-            using (var g = CreateGraphics())
-            using (var font = new Font("Segoe UI", 9f))
-            using (var brush = new SolidBrush(Color.FromArgb(180, 180, 180)))
-            {
-                SizeF sz = g.MeasureString(message, font);
-                g.DrawString(message, font, brush,
-                    (Width - sz.Width) / 2f,
-                    (Height - sz.Height) / 2f);
-            }
+            if (_webView == null) return;
+
+            var json = JsonConvert.SerializeObject(dto);
+
+            // PostWebMessageAsJson must run on the UI thread.
+            if (InvokeRequired)
+                BeginInvoke(() => _webView.PostWebMessageAsJson(json));
+            else
+                _webView.PostWebMessageAsJson(json);
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                _webView?.Dispose();
-                _webView = null;
+                _controller?.Close();
+                _controller = null;
             }
             base.Dispose(disposing);
-        }
-
-        public void PostMessage(SendDataDto data)
-        {
-            if (_webView?.CoreWebView2 != null)
-            {
-                string json = JsonConvert.SerializeObject(data);
-                _webView.CoreWebView2.PostWebMessageAsJson(json);
-            }
         }
     }
 }
