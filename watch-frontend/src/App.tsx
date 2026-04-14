@@ -12,7 +12,7 @@ import ZoomToFit from "./components/zoom-to-fit";
 import CameraManager from "./components/camera-manager";
 import { useEffect } from "react";
 import { getRhino } from "./rhino/get-rhino";
-
+import { Perf } from "r3f-perf";
 function Scene() {
   return (
     <>
@@ -40,7 +40,7 @@ function Scene() {
 
       <OrbitControls makeDefault />
       <ZoomToFit />
-      {/* <Perf position="top-left" /> */}
+      <Perf position="top-left" />
       <CameraManager />
       <GizmoHelper alignment="bottom-right" margin={[60, 60]}>
         <GizmoViewport
