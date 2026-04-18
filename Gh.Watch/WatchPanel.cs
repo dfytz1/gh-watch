@@ -14,6 +14,10 @@ namespace Gh.Watch
     {
         private CoreWebView2Controller _controller;
         private CoreWebView2 _webView;
+        private bool _isReady;
+
+        public bool IsReady => _isReady;
+        public event EventHandler WebViewReady;
 
         public WatchPanel()
         {
@@ -45,6 +49,7 @@ namespace Gh.Watch
                 _controller.Bounds = ClientRectangle;
 
                 _webView = _controller.CoreWebView2;
+                _webView.WebMessageReceived += OnWebMessageReceived;
                 _webView.Navigate("http://localhost:5173");
 
                 Resize += (s, args) =>
@@ -59,6 +64,17 @@ namespace Gh.Watch
                 Debug.WriteLine($"WebView2 init failed: {ex}");
                 #endif
             }
+        }
+
+        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
+        {
+            // JS sends { type: "ready" } after its message listener is wired up.
+            // Only then is it safe to push geometry — any earlier and PostWebMessageAsJson is dropped.
+            if (!e.WebMessageAsJson.Contains("\"ready\"")) return;
+
+            _webView.WebMessageReceived -= OnWebMessageReceived;
+            _isReady = true;
+            WebViewReady?.Invoke(this, EventArgs.Empty);
         }
 
         public void SendGeometry(SendDataDto dto)

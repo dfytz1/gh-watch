@@ -55,6 +55,8 @@ export const registerWebViewMessageHandlers = (handlers: MessageHandlerMap) => {
     }
   };
   window.chrome.webview.addEventListener("message", messageListener);
+  // Tell the C# host the listener is live and messages won't be dropped.
+  window.chrome.webview.postMessage({ type: "ready" });
   return () => {
     window.chrome.webview.removeEventListener("message", messageListener);
   };

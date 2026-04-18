@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Gh.Watch.Dtos;
 using Gh.Watch.Serialization;
 using Grasshopper;
 using Grasshopper.GUI.Canvas;
@@ -33,6 +34,13 @@ namespace Gh.Watch
         // It is a real Win32 window parented to the GH canvas, so it can render
         // hardware-accelerated web content that GDI+ cannot draw itself.
         private WatchPanel _panel;
+
+        // Last serialized geometry batch. Kept alive (never nulled after send)
+        // so it can be replayed whenever a new panel/WebView is created —
+        // handles both the doc-open race and return from a document switch.
+        private List<SendDataDto> _lastData;
+
+        public WatchPanel Panel { get => _panel; }
 
         public WatchAttributes(Watch_Component owner) : base(owner)
         {
@@ -216,6 +224,7 @@ namespace Gh.Watch
             if (_panel != null && !_panel.IsDisposed) return;
 
             _panel = new WatchPanel();
+            _panel.WebViewReady += OnWebViewReady;
             canvas.Controls.Add(_panel);
             _panel.BringToFront();
             canvas.DocumentChanged += OnDocumentChanged;
@@ -245,6 +254,7 @@ namespace Gh.Watch
             if (_panel == null || _panel.IsDisposed) return;
             canvas?.Controls.Remove(_panel);
 
+            _panel.WebViewReady -= OnWebViewReady;
             _panel.Dispose();
             _panel = null;
         }
@@ -263,13 +273,25 @@ namespace Gh.Watch
         //   GH_Point   .Value → Rhino.Geometry.Point3d (struct — never null)
         public async Task UpdateWebView(IGH_StructureEnumerator goo_structure)
         {
-            if (_panel == null || _panel.IsDisposed || goo_structure == null) return;
+            if (goo_structure == null) return;
 
             var data = goo_structure.SerializeObjects();
             if (data.Count == 0) return;
 
-            foreach (var dto in data)
+            _lastData = data;
+
+            if (_panel == null || _panel.IsDisposed || !_panel.IsReady) return;
+
+            FlushPending();
+        }
+
+        private void FlushPending()
+        {
+            if (_lastData == null || _panel == null || _panel.IsDisposed || !_panel.IsReady) return;
+            foreach (var dto in _lastData)
                 _panel.SendGeometry(dto);
         }
+
+        private void OnWebViewReady(object sender, EventArgs e) => FlushPending();
     }
 }
