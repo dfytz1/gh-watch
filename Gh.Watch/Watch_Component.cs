@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Grasshopper.Kernel;
 using Grasshopper.Kernel.Data;
 using Grasshopper.Kernel.Types;
@@ -36,7 +37,7 @@ namespace Gh.Watch
             DA.GetDataTree(0, out data);
 
             var allData = data.AllData(true);
-            ((WatchAttributes)m_attributes).UpdateWebView(allData);
+            Task.Run(async () => await ((WatchAttributes)m_attributes).UpdateWebView(allData));
         }
 
         public override void RemovedFromDocument(GH_Document document)

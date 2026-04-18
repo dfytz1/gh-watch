@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using Gh.Watch.Serialization;
 using Grasshopper;
@@ -260,7 +261,7 @@ namespace Gh.Watch
         //   GH_Curve   .Value → Rhino.Geometry.Curve  (base for Line/Arc/Nurbs/Polyline)
         //   GH_Line    .Value → Rhino.Geometry.Line   (struct — never null)
         //   GH_Point   .Value → Rhino.Geometry.Point3d (struct — never null)
-        public void UpdateWebView(IGH_StructureEnumerator goo_structure)
+        public async Task UpdateWebView(IGH_StructureEnumerator goo_structure)
         {
             if (_panel == null || _panel.IsDisposed || goo_structure == null) return;
 
