@@ -3,6 +3,7 @@ using Gh.Watch.Panel;
 using Newtonsoft.Json;
 using System;
 using System.Drawing;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Gh.Watch
@@ -32,7 +33,13 @@ namespace Gh.Watch
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            _ = _bridge.InitAsync(Handle, ClientRectangle);
+            _ = InitAndSyncBoundsAsync();
+        }
+
+        private async Task InitAndSyncBoundsAsync()
+        {
+            await _bridge.InitAsync(Handle, ClientRectangle);
+            _bridge.UpdateBounds(ClientRectangle);
         }
 
         protected override void OnResize(EventArgs e)
