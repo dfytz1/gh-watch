@@ -1,23 +1,27 @@
 using Gh.Watch.Dtos;
-using Microsoft.Web.WebView2.Core;
+using Gh.Watch.Panel;
 using Newtonsoft.Json;
 using System;
-using System.Diagnostics;
 using System.Drawing;
-using System.IO;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Gh.Watch
 {
-    public class WatchPanel : UserControl
+    // Thin WinForms shell: its sole job is to provide a native HWND that
+    // WebViewBridge can attach its CoreWebView2Controller to.
+    // All WebView2 logic lives in WebViewBridge; all canvas-lifecycle logic
+    // lives in PanelHost. This class just bridges the two worlds.
+    public sealed class WatchPanel : UserControl
     {
-        private CoreWebView2Controller _controller;
-        private CoreWebView2 _webView;
-        private bool _isReady;
+        private readonly WebViewBridge _bridge = new WebViewBridge();
 
-        public bool IsReady => _isReady;
-        public event EventHandler WebViewReady;
+        public bool IsReady => _bridge.IsReady;
+
+        public event EventHandler WebViewReady
+        {
+            add    => _bridge.Ready += value;
+            remove => _bridge.Ready -= value;
+        }
 
         public WatchPanel()
         {
@@ -25,78 +29,31 @@ namespace Gh.Watch
             DoubleBuffered = true;
         }
 
-        // OnHandleCreated fires once the native HWND exists, which is required
-        // for CoreWebView2Environment.CreateCoreWebView2ControllerAsync.
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            _ = InitWebViewAsync();
+            _ = _bridge.InitAsync(Handle, ClientRectangle);
         }
 
-        private async Task InitWebViewAsync()
+        protected override void OnResize(EventArgs e)
         {
-            try
-            {
-                var userDataFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                    "gh-watch-webview");
-
-                var env = await CoreWebView2Environment.CreateAsync(null, userDataFolder);
-
-                // CreateCoreWebView2ControllerAsync takes our WinForms HWND directly —
-                // no WinForms WebView2 wrapper required
-                _controller = await env.CreateCoreWebView2ControllerAsync(Handle);
-                _controller.Bounds = ClientRectangle;
-
-                _webView = _controller.CoreWebView2;
-                _webView.WebMessageReceived += OnWebMessageReceived;
-                _webView.Navigate("http://localhost:5173");
-
-                Resize += (s, args) =>
-                {
-                    if (_controller != null)
-                        _controller.Bounds = ClientRectangle;
-                };
-            }
-            catch (Exception ex)
-            {
-                #if DEBUG
-                Debug.WriteLine($"WebView2 init failed: {ex}");
-                #endif
-            }
-        }
-
-        private void OnWebMessageReceived(object sender, CoreWebView2WebMessageReceivedEventArgs e)
-        {
-            // JS sends { type: "ready" } after its message listener is wired up.
-            // Only then is it safe to push geometry — any earlier and PostWebMessageAsJson is dropped.
-            if (!e.WebMessageAsJson.Contains("\"ready\"")) return;
-
-            _webView.WebMessageReceived -= OnWebMessageReceived;
-            _isReady = true;
-            WebViewReady?.Invoke(this, EventArgs.Empty);
+            base.OnResize(e);
+            _bridge.UpdateBounds(ClientRectangle);
         }
 
         public void SendGeometry(SendDataDto dto)
         {
-            if (_webView == null) return;
-
             var json = JsonConvert.SerializeObject(dto);
-
             // PostWebMessageAsJson must run on the UI thread.
             if (InvokeRequired)
-                BeginInvoke(() => _webView.PostWebMessageAsJson(json));
+                BeginInvoke(() => _bridge.Send(json));
             else
-                _webView.PostWebMessageAsJson(json);
+                _bridge.Send(json);
         }
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
-            {
-                _controller?.Close();
-                _controller = null;
-            }
+            if (disposing) _bridge.Dispose();
             base.Dispose(disposing);
         }
     }
