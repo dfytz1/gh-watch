@@ -15,11 +15,8 @@ namespace Gh.Watch.Serialization
     {
         public static List<SendDataDto> SerializeObjects(this IGH_StructureEnumerator _goos)
         {
-            List<SendDataDto> dataDtos = [];
-
             var file = new File3dm();
             var brep_payload = new List<object>();
-            var mesh_payload = new List<object>();
 
             var s_opt = new SerializationOptions();
             foreach (var goo in _goos)
@@ -37,7 +34,6 @@ namespace Gh.Watch.Serialization
                             });
 
                             file.AddBrepEdgesToFile(brp);
-                            //edge_payload.AddRange(brp.GetEdgePayload(s_opt));
 
                         }
                         break;
@@ -70,10 +66,6 @@ namespace Gh.Watch.Serialization
                         {
                             var msh = ghMesh.Value;
                             file.Objects.AddMesh(msh);
-                            //mesh_payload.Add(new GenericPayloadDto
-                            //{
-                            //    Data = msh.ToJSON(s_opt),
-                            //});
                             file.AddMeshEdgesToFile(msh);
                         }
                         break;
@@ -122,23 +114,22 @@ namespace Gh.Watch.Serialization
                 }
             }
 
-
-            dataDtos.Add(new SendDataDto
-            {
-                EventType = GeometryType.Mesh,
-                Payload = brep_payload
-            });
-
-
-
-            dataDtos.Add(new SendDataDto
-            {
-                EventType = SendToWebvViewCommand.Send_File_Geometry,
-                Payload = file.ToByteArray()
-            });
-
-            return dataDtos;
-
+            // Wrap both payloads into a single message so the webapp knows when
+            // all geometry data for this solve has arrived and can clear loading once done.
+            return
+            [
+                new SendDataDto
+                {
+                    EventType = SendToWebvViewCommand.Geometry_Batch,
+                    Payload = new GeometryBatchDto
+                    {
+                        BrepPayload = brep_payload,
+                        // Only include file bytes when the file actually has objects;
+                        // null signals the frontend that no file-based geometry needs loading.
+                        FileData = file.Objects.Count > 0 ? file.ToByteArray() : null,
+                    }
+                }
+            ];
         }
 
     }

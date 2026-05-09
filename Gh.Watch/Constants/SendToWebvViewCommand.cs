@@ -6,5 +6,6 @@
         public const string Send_Direct_Geometry = "direct_geometry";
         public const string Send_File_Geometry = "file_geometry";
         public const string Geometries_Loading = "geometries_loading";
+        public const string Geometry_Batch = "geometry_batch";
     }
 }

@@ -8,6 +8,11 @@ import { processDirectGeometry } from "../utils/rhino/process-brep-geometry";
 import type { IGenericPayload } from "../props/payload-props/IGenericPayload";
 import { useLoadingStore } from "../store/loading-store";
 
+interface GeometryBatchPayload {
+  brepPayload: IGenericPayload[];
+  fileData: string | null;
+}
+
 const GeometryView = () => {
   const [fileArray, setFileArray] = useState<Uint8Array | null>(null);
   const [brepGeometry, setBrepGeometry] = useState<BufferGeometry | null>(null);
@@ -20,35 +25,39 @@ const GeometryView = () => {
       geometries_loading: () => {
         setLoading(true);
       },
-      /**for curve use file based approach */
-      file_geometry: (payload: string) => {
-        if (!payload) return;
 
-        console.group("gh-watch | geometry message");
-        console.log("base64 payload (%d chars):", payload.length);
+      // Single command wrapping all geometry for one GH solve.
+      // Loading is cleared here when there is no file data to parse,
+      // or by RhinoFileView's finally block when file-based geometry is present.
+      geometry_batch: async (payload: GeometryBatchPayload) => {
+        const hasBrepData = payload.brepPayload?.length > 0;
+        const hasFileData = payload.fileData != null;
 
-        const t0 = performance.now();
-        const binary = atob(payload);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++)
-          bytes[i] = binary.charCodeAt(i);
-        const t1 = performance.now();
+        // Kick off brep processing in parallel with setting state
+        const brepPromise = hasBrepData
+          ? processDirectGeometry(payload.brepPayload)
+          : Promise.resolve(null);
 
-        console.log("decode : %.2f ms  (%d bytes)", t1 - t0, bytes.length);
-        console.groupEnd();
-
-        setFileArray(bytes);
-        // loading is cleared by RhinoFileView once the file finishes loading
-      },
-      mesh: async (payload: IGenericPayload[]) => {
-        if (payload.length > 0) {
-          const geo = await processDirectGeometry(payload);
-          if (geo) setBrepGeometry(geo);
+        // Set file bytes (triggers RhinoFileView); null clears any previous file scene
+        if (hasFileData) {
+          const binary = atob(payload.fileData!);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++)
+            bytes[i] = binary.charCodeAt(i);
+          setFileArray(bytes);
         } else {
-          setBrepGeometry(null);
+          setFileArray(null);
         }
-        // loading is not cleared here — file_geometry always follows and
-        // RhinoFileView will clear it once the heavier file load completes.
+
+        const geo = await brepPromise;
+        setBrepGeometry(geo);
+
+        // If there is no file data, all geometry is already processed — clear loading now.
+        // If there is file data, RhinoFileView clears loading in its finally block once
+        // the heavier async 3dm parse completes.
+        if (!hasFileData) {
+          setLoading(false);
+        }
       },
     });
 
