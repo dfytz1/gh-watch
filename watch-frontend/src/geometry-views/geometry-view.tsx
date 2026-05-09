@@ -21,7 +21,7 @@ const GeometryView = () => {
       // pending so the overlay stays visible until every view finishes processing.
       geometries_loading: () => {
         setLoading(true);
-        markViewLoading("brep");
+        markViewLoading("mesh");
         markViewLoading("file");
       },
 
@@ -36,8 +36,7 @@ const GeometryView = () => {
         const t0 = performance.now();
         const binary = atob(payload);
         const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++)
-          bytes[i] = binary.charCodeAt(i);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
         const t1 = performance.now();
 
         console.log("decode : %.2f ms  (%d bytes)", t1 - t0, bytes.length);
@@ -46,7 +45,7 @@ const GeometryView = () => {
         setFileArray(bytes);
       },
 
-      // Brep / surface / box geometry — processed directly in JS; marks "brep" done
+      // Brep / surface / box geometry — processed directly in JS; marks "mesh" done
       // once the async work completes, regardless of what the file view is doing.
       mesh: async (payload: IGenericPayload[]) => {
         try {
@@ -57,7 +56,7 @@ const GeometryView = () => {
             setBrepGeometry(null);
           }
         } finally {
-          markViewDone("brep");
+          markViewDone("mesh");
         }
       },
     });

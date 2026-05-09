@@ -1,13 +1,14 @@
 import { create } from "zustand";
+import type { ViewType } from "../geometry-views/view-types";
 
 interface LoadingStoreState {
   isLoading: boolean;
   pendingViews: Set<string>;
   setLoading: (loading: boolean) => void;
   // Mark a named view as still loading — isLoading stays true until all views are done.
-  markViewLoading: (viewId: string) => void;
+  markViewLoading: (viewType: ViewType) => void;
   // Mark a named view as done — clears isLoading once no views remain pending.
-  markViewDone: (viewId: string) => void;
+  markViewDone: (viewType: ViewType) => void;
 }
 
 export const useLoadingStore = create<LoadingStoreState>()((set) => ({
