@@ -10,10 +10,14 @@ import GeometryView from "./geometry-views/geometry-view";
 import Toolbar from "./components/toolbar";
 import ZoomToFit from "./components/zoom-to-fit";
 import CameraManager from "./components/camera-manager";
+import LoadingOverlay from "./components/loading-overlay";
 import { useEffect } from "react";
 import { getRhino } from "./rhino/get-rhino";
+import { useLoadingStore } from "./store/loading-store";
 // import { Perf } from "r3f-perf";
 function Scene() {
+  const isLoading = useLoadingStore((s) => s.isLoading);
+
   return (
     <>
       <ambientLight intensity={3.5} />
@@ -36,7 +40,7 @@ function Scene() {
 
       <GeometryView />
 
-      <OrbitControls makeDefault />
+      <OrbitControls makeDefault enabled={!isLoading} />
       <ZoomToFit />
       {/* <Perf position="top-left" /> */}
       <CameraManager />
@@ -68,6 +72,7 @@ export default function App() {
         <Scene />
       </Canvas>
       <Toolbar />
+      <LoadingOverlay />
     </div>
   );
 }

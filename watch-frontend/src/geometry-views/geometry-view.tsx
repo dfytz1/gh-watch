@@ -6,14 +6,27 @@ import BrepView from "./brep-view";
 
 import { processDirectGeometry } from "../utils/rhino/process-brep-geometry";
 import type { IGenericPayload } from "../props/payload-props/IGenericPayload";
+import { useLoadingStore } from "../store/loading-store";
 
 const GeometryView = () => {
   const [fileArray, setFileArray] = useState<Uint8Array | null>(null);
   const [brepGeometry, setBrepGeometry] = useState<BufferGeometry | null>(null);
+  const setLoading = useLoadingStore((s) => s.setLoading);
+  const markViewLoading = useLoadingStore((s) => s.markViewLoading);
+  const markViewDone = useLoadingStore((s) => s.markViewDone);
 
   useEffect(() => {
     const unregister = registerWebViewMessageHandlers({
-      /**for curve use file based approach */
+      // Grasshopper sends this before it starts serializing — mark both views as
+      // pending so the overlay stays visible until every view finishes processing.
+      geometries_loading: () => {
+        setLoading(true);
+        markViewLoading("mesh");
+        markViewLoading("file");
+      },
+
+      // File-based geometry (curves, meshes, etc.) — decoding triggers RhinoFileView
+      // which clears the "file" pending flag in its finally block.
       file_geometry: (payload: string) => {
         if (!payload) return;
 
@@ -31,22 +44,27 @@ const GeometryView = () => {
 
         setFileArray(bytes);
       },
+
+      // Brep / surface / box geometry — processed directly in JS; marks "mesh" done
+      // once the async work completes, regardless of what the file view is doing.
       mesh: async (payload: IGenericPayload[]) => {
-        if (payload.length === 0) {
-          setBrepGeometry(null);
-          return;
+        try {
+          if (payload.length > 0) {
+            const geo = await processDirectGeometry(payload);
+            setBrepGeometry(geo);
+          } else {
+            setBrepGeometry(null);
+          }
+        } finally {
+          markViewDone("mesh");
         }
-
-        const geo = await processDirectGeometry(payload);
-
-        if (geo) setBrepGeometry(geo);
       },
     });
 
     return () => {
       unregister?.();
     };
-  }, []);
+  }, [setLoading, markViewLoading, markViewDone]);
 
   return (
     <>

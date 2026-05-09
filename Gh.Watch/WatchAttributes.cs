@@ -133,11 +133,20 @@ namespace Gh.Watch
         // Called by RemovedFromDocument — destroy the panel before GH discards the component.
         public void DestroyPanel() => _panelHost.Destroy(Instances.ActiveCanvas);
 
-        // Called via Task.Run from SolveInstance — serializes on the background thread,
-        // then hands the result to PanelHost which buffers and flushes it.
+        /// <summary>
+        /// Called via Task.Run from SolveInstance — signals the web view that loading
+        /// has started, then serializes on the background thread, and hands the result
+        /// to PanelHost which buffers and flushes it.
+        /// </summary>
+        /// <param name="goo_structure"></param>
+        /// <returns></returns>
         public async Task UpdateWebView(IGH_StructureEnumerator goo_structure)
         {
             if (goo_structure == null) return;
+
+            // Notify the web app immediately so the loading overlay appears
+            // before the (potentially slow) serialization step begins.
+            _panelHost.SendLoadingSignal();
 
             var data = goo_structure.SerializeObjects();
             if (data.Count == 0) return;

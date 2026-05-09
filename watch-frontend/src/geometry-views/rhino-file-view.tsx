@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { loadRhinoFileFromByteArray } from "../rhino/load-rhino-file";
+import { useLoadingStore } from "../store/loading-store";
 import {
   BufferGeometry,
   Float32BufferAttribute,
@@ -165,6 +166,7 @@ function buildSceneGroup(root: Object3D): Group {
 const RhinoFileView: React.FC<RhinoFileViewProps> = ({ byteArray }) => {
   const [object, setObject] = React.useState<Object3D | undefined>(undefined);
   const setSceneObject = useSceneStore((s) => s.setSceneObject);
+  const markViewDone = useLoadingStore((s) => s.markViewDone);
   const prevGroupRef = useRef<Group | null>(null);
 
   useEffect(() => {
@@ -203,6 +205,8 @@ const RhinoFileView: React.FC<RhinoFileViewProps> = ({ byteArray }) => {
         setSceneObject(group);
       } catch (error) {
         if (!cancelled) console.error("Error loading Rhino file:", error);
+      } finally {
+        if (!cancelled) markViewDone("file");
       }
     };
 
@@ -212,7 +216,7 @@ const RhinoFileView: React.FC<RhinoFileViewProps> = ({ byteArray }) => {
       cancelled = true;
       setSceneObject(null);
     };
-  }, [byteArray, setSceneObject]);
+  }, [byteArray, setSceneObject, markViewDone]);
 
   return <>{object ? <primitive object={object} /> : null}</>;
 };
