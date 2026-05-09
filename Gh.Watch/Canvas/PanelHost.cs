@@ -32,17 +32,21 @@ namespace Gh.Watch.Canvas
             _panel.Visible = true;
         }
 
-        // Stores the latest geometry batch and tries to push it immediately.
-        // If the WebView isn't ready yet Flush() is a no-op; OnWebViewReady will
-        // call it again once the JS signals it's listening.
+        /// <summary>
+        /// Stores the latest geometry batch and tries to push it immediately.
+        /// If the WebView isn't ready yet Flush() is a no-op; OnWebViewReady will
+        /// call it again once the JS signals it's listening.
+        /// </summary>
+        /// <param name="data"></param>
         public void Store(List<SendDataDto> data)
         {
             _lastData = data;
             Flush();
         }
 
-        // Sends a loading-started signal immediately, without buffering.
-        // Called before serialization so the overlay appears as soon as GH starts preparing data.
+       /// <remarks>Call this method to notify the associated panel that a loading operation for geometry
+       /// data has started. This can be used to trigger loading indicators or other UI updates in the connected view.
+       /// The method has no effect if the panel is not ready or has been disposed.</remarks>
         public void SendLoadingSignal()
         {
             if (_panel == null || _panel.IsDisposed || !_panel.IsReady) return;
