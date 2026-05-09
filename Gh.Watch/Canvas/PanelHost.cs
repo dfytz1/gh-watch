@@ -40,6 +40,18 @@ namespace Gh.Watch.Canvas
             Flush();
         }
 
+        // Sends a loading-started signal immediately, without buffering.
+        // Called before serialization so the overlay appears as soon as GH starts preparing data.
+        public void SendLoadingSignal()
+        {
+            if (_panel == null || _panel.IsDisposed || !_panel.IsReady) return;
+            _panel.SendGeometry(new SendDataDto
+            {
+                EventType = SendToWebvViewCommand.Geometries_Loading,
+                Payload = new { },
+            });
+        }
+
         public void Destroy(GH_Canvas canvas)
         {
             if (_panel == null || _panel.IsDisposed) return;

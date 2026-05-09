@@ -173,7 +173,6 @@ const RhinoFileView: React.FC<RhinoFileViewProps> = ({ byteArray }) => {
     let cancelled = false;
 
     const loadRhinoFile = async () => {
-      setLoading(true);
       try {
         const tParse0 = performance.now();
         const object3D = await loadRhinoFileFromByteArray(byteArray);
