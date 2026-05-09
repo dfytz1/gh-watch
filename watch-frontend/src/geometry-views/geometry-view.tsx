@@ -8,55 +8,56 @@ import { processDirectGeometry } from "../utils/rhino/process-brep-geometry";
 import type { IGenericPayload } from "../props/payload-props/IGenericPayload";
 import { useLoadingStore } from "../store/loading-store";
 
-interface GeometryBatchPayload {
-  brepPayload: IGenericPayload[];
-  fileData: string | null;
-}
-
 const GeometryView = () => {
   const [fileArray, setFileArray] = useState<Uint8Array | null>(null);
   const [brepGeometry, setBrepGeometry] = useState<BufferGeometry | null>(null);
   const setLoading = useLoadingStore((s) => s.setLoading);
+  const markViewLoading = useLoadingStore((s) => s.markViewLoading);
+  const markViewDone = useLoadingStore((s) => s.markViewDone);
 
   useEffect(() => {
     const unregister = registerWebViewMessageHandlers({
-      // Grasshopper sends this before it starts serializing, so the overlay
-      // appears immediately — before any geometry data arrives.
+      // Grasshopper sends this before it starts serializing — mark both views as
+      // pending so the overlay stays visible until every view finishes processing.
       geometries_loading: () => {
         setLoading(true);
+        markViewLoading("brep");
+        markViewLoading("file");
       },
 
-      // Single command wrapping all geometry for one GH solve.
-      // Loading is cleared here when there is no file data to parse,
-      // or by RhinoFileView's finally block when file-based geometry is present.
-      geometry_batch: async (payload: GeometryBatchPayload) => {
-        const hasBrepData = payload.brepPayload?.length > 0;
-        const hasFileData = payload.fileData != null;
+      // File-based geometry (curves, meshes, etc.) — decoding triggers RhinoFileView
+      // which clears the "file" pending flag in its finally block.
+      file_geometry: (payload: string) => {
+        if (!payload) return;
 
-        // Kick off brep processing in parallel with setting state
-        const brepPromise = hasBrepData
-          ? processDirectGeometry(payload.brepPayload)
-          : Promise.resolve(null);
+        console.group("gh-watch | geometry message");
+        console.log("base64 payload (%d chars):", payload.length);
 
-        // Set file bytes (triggers RhinoFileView); null clears any previous file scene
-        if (hasFileData) {
-          const binary = atob(payload.fileData!);
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++)
-            bytes[i] = binary.charCodeAt(i);
-          setFileArray(bytes);
-        } else {
-          setFileArray(null);
-        }
+        const t0 = performance.now();
+        const binary = atob(payload);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++)
+          bytes[i] = binary.charCodeAt(i);
+        const t1 = performance.now();
 
-        const geo = await brepPromise;
-        setBrepGeometry(geo);
+        console.log("decode : %.2f ms  (%d bytes)", t1 - t0, bytes.length);
+        console.groupEnd();
 
-        // If there is no file data, all geometry is already processed — clear loading now.
-        // If there is file data, RhinoFileView clears loading in its finally block once
-        // the heavier async 3dm parse completes.
-        if (!hasFileData) {
-          setLoading(false);
+        setFileArray(bytes);
+      },
+
+      // Brep / surface / box geometry — processed directly in JS; marks "brep" done
+      // once the async work completes, regardless of what the file view is doing.
+      mesh: async (payload: IGenericPayload[]) => {
+        try {
+          if (payload.length > 0) {
+            const geo = await processDirectGeometry(payload);
+            setBrepGeometry(geo);
+          } else {
+            setBrepGeometry(null);
+          }
+        } finally {
+          markViewDone("brep");
         }
       },
     });
@@ -64,7 +65,7 @@ const GeometryView = () => {
     return () => {
       unregister?.();
     };
-  }, [setLoading]);
+  }, [setLoading, markViewLoading, markViewDone]);
 
   return (
     <>

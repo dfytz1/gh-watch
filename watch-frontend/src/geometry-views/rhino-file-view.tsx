@@ -166,7 +166,7 @@ function buildSceneGroup(root: Object3D): Group {
 const RhinoFileView: React.FC<RhinoFileViewProps> = ({ byteArray }) => {
   const [object, setObject] = React.useState<Object3D | undefined>(undefined);
   const setSceneObject = useSceneStore((s) => s.setSceneObject);
-  const setLoading = useLoadingStore((s) => s.setLoading);
+  const markViewDone = useLoadingStore((s) => s.markViewDone);
   const prevGroupRef = useRef<Group | null>(null);
 
   useEffect(() => {
@@ -206,7 +206,7 @@ const RhinoFileView: React.FC<RhinoFileViewProps> = ({ byteArray }) => {
       } catch (error) {
         if (!cancelled) console.error("Error loading Rhino file:", error);
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) markViewDone("file");
       }
     };
 
@@ -216,7 +216,7 @@ const RhinoFileView: React.FC<RhinoFileViewProps> = ({ byteArray }) => {
       cancelled = true;
       setSceneObject(null);
     };
-  }, [byteArray, setSceneObject, setLoading]);
+  }, [byteArray, setSceneObject, markViewDone]);
 
   return <>{object ? <primitive object={object} /> : null}</>;
 };
